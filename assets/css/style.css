@@ -14,17 +14,20 @@
     --text-light: #1e293b;
     --card-light: #ffffff;
     --border-light: #e2e8f0;
+    --header-bg-light: rgba(255, 255, 255, 0.8);
     
     --bg-dark: #0f172a;
     --text-dark: #f1f5f9;
     --card-dark: #1e293b;
     --border-dark: #334155;
+    --header-bg-dark: rgba(15, 23, 42, 0.9);
 
     /* Default Theme (Dark) */
     --bg: var(--bg-dark);
     --text: var(--text-dark);
     --card: var(--card-dark);
     --border: var(--border-dark);
+    --header-bg: var(--header-bg-dark);
     
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -36,6 +39,7 @@
     --text: var(--text-light);
     --card: var(--card-light);
     --border: var(--border-light);
+    --header-bg: var(--header-bg-light);
 }
 
 /* Base Styles */
@@ -98,7 +102,7 @@ header {
     position: sticky;
     top: 0;
     z-index: 1000;
-    background: rgba(15, 23, 42, 0.9); /* Hardcoded RGB for compatibility */
+    background: var(--header-bg);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
 }
