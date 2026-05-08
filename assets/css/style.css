@@ -98,9 +98,64 @@ header {
     position: sticky;
     top: 0;
     z-index: 1000;
-    background: rgba(var(--bg), 0.8);
+    background: rgba(15, 23, 42, 0.9); /* Hardcoded RGB for compatibility */
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
+}
+
+/* Hero Section */
+.hero {
+    padding: 6rem 0 4rem;
+    text-align: center;
+    background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.1), transparent),
+                radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.05), transparent);
+}
+
+.hero h1 {
+    font-size: 3.5rem;
+    font-family: 'Outfit', sans-serif;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+}
+
+.hero p {
+    font-size: 1.25rem;
+    opacity: 0.8;
+    max-width: 700px;
+    margin: 0 auto 2.5rem;
+}
+
+.search-container {
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.search-container i {
+    position: absolute;
+    left: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--primary);
+    font-size: 1.2rem;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 1.25rem 1.25rem 1.25rem 3.5rem;
+    font-size: 1.1rem;
+    border-radius: 100px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    box-shadow: var(--shadow-lg);
+    transition: var(--transition);
+}
+
+.search-container input:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
 }
 
 .navbar {
