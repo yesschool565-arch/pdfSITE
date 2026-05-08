@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to PDF - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    
+    <style>
+        .text-pdf-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 2rem;
+        }
+
+        #text-content {
+            width: 100%;
+            height: 400px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            color: var(--text);
+            padding: 1.5rem;
+            font-family: 'Inter', sans-serif;
+            resize: none;
+            outline: none;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Text to PDF</h1>
+            <p>Convert your notes or text into a professional PDF file.</p>
+        </div>
+
+        <div class="text-pdf-container">
+            <textarea id="text-content" placeholder="Paste or type your text here..."></textarea>
+            
+            <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 1rem">
+                <button id="download-btn" class="btn btn-primary btn-lg">
+                    <i class="fas fa-file-pdf"></i> Download PDF
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const textContent = document.getElementById('text-content');
+        const downloadBtn = document.getElementById('download-btn');
+
+        downloadBtn.addEventListener('click', () => {
+            const text = textContent.value.trim();
+            if (!text) {
+                Utils.showToast('Please enter some text', 'error');
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                const margin = 20;
+                const pageWidth = doc.internal.pageSize.getWidth() - (margin * 2);
+                
+                const lines = doc.splitTextToSize(text, pageWidth);
+                doc.text(lines, margin, margin);
+                
+                doc.save('smarttools-document.pdf');
+                Utils.showToast('PDF generated!', 'success');
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Error generating PDF', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

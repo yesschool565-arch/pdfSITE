@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR Image to Text - Extract Text from Photos - SmartTools Hub</title>
+    <meta name="description" content="Extract text from images, photos, and scanned documents for free. Fast and private OCR processing entirely in your browser.">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>OCR Image to Text</h1>
+            <p>Extract editable text from any image or scanned document.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-font"></i>
+            <h2>Select Image</h2>
+            <p>Supports JPG, PNG, WEBP</p>
+            <input type="file" id="image-input" accept="image/*" style="display: none">
+            <button class="btn btn-primary">Choose Image</button>
+        </div>
+
+        <div id="workspace" style="display: none; max-width: 800px; margin: 2rem auto">
+            <div class="box" style="padding: 2rem">
+                <div id="progress-container" style="display: none; margin-bottom: 2rem">
+                    <p id="status-text">Starting OCR...</p>
+                    <div style="width: 100%; height: 10px; background: var(--border); border-radius: 5px; margin-top: 0.5rem; overflow: hidden">
+                        <div id="progress-bar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.3s"></div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Extracted Text</label>
+                    <textarea id="result-text" class="form-control" rows="10" placeholder="Extracted text will appear here..."></textarea>
+                </div>
+
+                <div class="flex gap-4" style="margin-top: 1.5rem">
+                    <button id="copy-btn" class="btn btn-outline" style="flex: 1">
+                        <i class="fas fa-copy"></i> Copy Text
+                    </button>
+                    <button onclick="location.reload()" class="btn btn-primary" style="flex: 1">
+                        <i class="fas fa-redo"></i> Start New
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const imageInput = document.getElementById('image-input');
+        const workspace = document.getElementById('workspace');
+        const progressBar = document.getElementById('progress-bar');
+        const statusText = document.getElementById('status-text');
+        const progressContainer = document.getElementById('progress-container');
+        const resultText = document.getElementById('result-text');
+        const copyBtn = document.getElementById('copy-btn');
+
+        imageInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            workspace.style.display = 'block';
+            document.getElementById('upload-zone').style.display = 'none';
+            progressContainer.style.display = 'block';
+
+            try {
+                const worker = await Tesseract.createWorker('eng', 1, {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            const progress = Math.round(m.progress * 100);
+                            progressBar.style.width = progress + '%';
+                            statusText.textContent = `Processing: ${progress}%`;
+                        } else {
+                            statusText.textContent = m.status;
+                        }
+                    }
+                });
+
+                const { data: { text } } = await worker.recognize(file);
+                resultText.value = text;
+                progressContainer.style.display = 'none';
+                Utils.showToast('Text extracted successfully!', 'success');
+                await worker.terminate();
+            } catch (err) {
+                console.error(err);
+                statusText.textContent = 'Error processing image.';
+                Utils.showToast('Failed to extract text.', 'error');
+            }
+        });
+
+        copyBtn.addEventListener('click', () => {
+            resultText.select();
+            document.execCommand('copy');
+            Utils.showToast('Text copied to clipboard!', 'success');
+        });
+    </script>
+</body>
+</html>

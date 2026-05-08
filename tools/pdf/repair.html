@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repair PDF - Fix Corrupted PDF Online - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Repair PDF</h1>
+            <p>Recover data from corrupted or damaged PDF files by rebuilding their structure.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-tools"></i>
+            <h2>Select Damaged PDF</h2>
+            <p>We'll try to rebuild and recover it</p>
+            <input type="file" id="pdf-input" accept="application/pdf" style="display: none">
+            <button class="btn btn-primary">Choose PDF</button>
+        </div>
+
+        <div id="workspace" style="display: none; max-width: 600px; margin: 2rem auto; text-align: center">
+            <div class="box" style="padding: 2rem">
+                <i class="fas fa-file-medical" style="font-size: 3rem; color: #10b981; margin-bottom: 1rem"></i>
+                <h3 id="file-name">filename.pdf</h3>
+                
+                <button id="repair-btn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 1rem">
+                    <i class="fas fa-hammer"></i> Attempt Repair
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="result-screen">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h2>Process Finished!</h2>
+            <p>If the PDF was recoverable, the repaired version is ready for download.</p>
+            <div class="flex gap-4" style="justify-content: center; margin-top: 2rem">
+                <button id="download-final" class="btn btn-primary btn-lg">Download Repaired PDF</button>
+                <button onclick="location.reload()" class="btn btn-outline">Repair Another</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const pdfInput = document.getElementById('pdf-input');
+        const workspace = document.getElementById('workspace');
+        const repairBtn = document.getElementById('repair-btn');
+        const resultScreen = document.getElementById('result-screen');
+        const downloadFinal = document.getElementById('download-final');
+
+        let originalBuffer = null;
+        let finalBlob = null;
+
+        pdfInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            originalBuffer = await file.arrayBuffer();
+            document.getElementById('file-name').textContent = file.name;
+            workspace.style.display = 'block';
+            document.getElementById('upload-zone').style.display = 'none';
+        });
+
+        repairBtn.addEventListener('click', async () => {
+            repairBtn.disabled = true;
+            repairBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Repairing...';
+
+            try {
+                const { PDFDocument } = PDFLib;
+                // Attempting to load with ignoreEncryption: true and basic structural validation
+                const pdfDoc = await PDFDocument.load(originalBuffer, { 
+                    ignoreEncryption: true,
+                    throwOnInvalidObject: false 
+                });
+                
+                const pdfBytes = await pdfDoc.save();
+                finalBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+
+                workspace.style.display = 'none';
+                resultScreen.style.display = 'block';
+                Utils.showToast('Repair attempt completed', 'success');
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Could not recover the PDF structure.', 'error');
+            } finally {
+                repairBtn.disabled = false;
+                repairBtn.innerHTML = '<i class="fas fa-hammer"></i> Attempt Repair';
+            }
+        });
+
+        downloadFinal.addEventListener('click', () => {
+            if (finalBlob) Utils.downloadBlob(finalBlob, `repaired-${document.getElementById('file-name').textContent}`);
+        });
+    </script>
+</body>
+</html>

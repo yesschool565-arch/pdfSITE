@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rotate PDF Online - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    
+    <style>
+        .rotate-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .page-rotate-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .page-rotate-card i {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+
+        .rotate-controls {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Rotate PDF</h1>
+            <p>Rotate individual pages or all pages of your PDF document.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-file-pdf"></i>
+            <h2>Select PDF</h2>
+            <p>Choose the PDF you want to rotate</p>
+            <input type="file" id="pdf-input" accept="application/pdf" style="display: none">
+            <button class="btn btn-primary">Choose PDF</button>
+        </div>
+
+        <div id="workspace" style="display: none">
+            <div style="display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem">
+                <button class="btn btn-outline" id="rotate-all">
+                    <i class="fas fa-redo"></i> Rotate All 90°
+                </button>
+            </div>
+            
+            <div class="rotate-grid" id="rotate-grid"></div>
+            
+            <div style="text-align: center">
+                <button id="save-btn" class="btn btn-primary btn-lg">
+                    <i class="fas fa-save"></i> Save Rotated PDF
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const pdfInput = document.getElementById('pdf-input');
+        const workspace = document.getElementById('workspace');
+        const rotateGrid = document.getElementById('rotate-grid');
+        const saveBtn = document.getElementById('save-btn');
+        const rotateAllBtn = document.getElementById('rotate-all');
+
+        let originalPdfBytes = null;
+        let pageRotations = []; // Array of angles (0, 90, 180, 270)
+
+        pdfInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            originalPdfBytes = await file.arrayBuffer();
+            const pdfDoc = await PDFLib.PDFDocument.load(originalPdfBytes);
+            const count = pdfDoc.getPageCount();
+            
+            pageRotations = new Array(count).fill(0);
+            renderGrid();
+            workspace.style.display = 'block';
+            document.getElementById('upload-zone').style.display = 'none';
+        });
+
+        function renderGrid() {
+            rotateGrid.innerHTML = '';
+            pageRotations.forEach((rotation, i) => {
+                const card = document.createElement('div');
+                card.className = 'page-rotate-card animate-fade-in';
+                card.innerHTML = `
+                    <i class="fas fa-file-pdf" style="transform: rotate(${rotation}deg)"></i>
+                    <div style="margin-bottom: 1rem">Page ${i + 1}</div>
+                    <div class="rotate-controls">
+                        <button class="btn btn-icon" onclick="rotatePage(${i}, -90)">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        <button class="btn btn-icon" onclick="rotatePage(${i}, 90)">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
+                `;
+                rotateGrid.appendChild(card);
+            });
+        }
+
+        window.rotatePage = (index, angle) => {
+            pageRotations[index] = (pageRotations[index] + angle + 360) % 360;
+            renderGrid();
+        };
+
+        rotateAllBtn.addEventListener('click', () => {
+            pageRotations = pageRotations.map(r => (r + 90) % 360);
+            renderGrid();
+        });
+
+        saveBtn.addEventListener('click', async () => {
+            try {
+                const { PDFDocument, degrees } = PDFLib;
+                const pdfDoc = await PDFDocument.load(originalPdfBytes);
+                const pages = pdfDoc.getPages();
+                
+                pages.forEach((page, i) => {
+                    const currentRotation = page.getRotation().angle;
+                    page.setRotation(degrees(currentRotation + pageRotations[i]));
+                });
+                
+                const pdfBytes = await pdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                
+                Utils.downloadBlob(blob, 'rotated-smarttools.pdf');
+                Utils.showToast('PDF rotated and saved!', 'success');
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Error rotating PDF', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

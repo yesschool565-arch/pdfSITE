@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Signature Maker - Draw & Download - SmartTools Hub</title>
+    <meta name="description" content="Create your electronic signature online for free. Draw and download your signature as a transparent PNG file.">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    <style>
+        #signature-pad {
+            border: 2px dashed var(--border);
+            border-radius: 1rem;
+            background: white;
+            cursor: crosshair;
+            width: 100%;
+            height: 300px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>E-Signature Maker</h1>
+            <p>Draw your signature below and download it as a transparent PNG.</p>
+        </div>
+
+        <div style="max-width: 600px; margin: 0 auto">
+            <div class="box" style="padding: 1.5rem">
+                <canvas id="signature-pad"></canvas>
+                
+                <div class="flex gap-4" style="margin-top: 1.5rem">
+                    <button id="clear-btn" class="btn btn-outline" style="flex: 1">
+                        <i class="fas fa-eraser"></i> Clear
+                    </button>
+                    <button id="download-btn" class="btn btn-primary" style="flex: 2">
+                        <i class="fas fa-download"></i> Download PNG
+                    </button>
+                </div>
+            </div>
+
+            <div class="box" style="margin-top: 2rem; padding: 1.5rem">
+                <h3>Options</h3>
+                <div class="input-group" style="margin-top: 1rem">
+                    <label>Pen Color</label>
+                    <input type="color" id="pen-color" value="#000000">
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.5/dist/signature_pad.umd.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const canvas = document.getElementById('signature-pad');
+        const clearBtn = document.getElementById('clear-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const penColor = document.getElementById('pen-color');
+
+        // Adjust canvas resolution
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+        }
+
+        window.onresize = resizeCanvas;
+        resizeCanvas();
+
+        const signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgba(255, 255, 255, 0)'
+        });
+
+        penColor.addEventListener('change', () => {
+            signaturePad.penColor = penColor.value;
+        });
+
+        clearBtn.addEventListener('click', () => {
+            signaturePad.clear();
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            if (signaturePad.isEmpty()) {
+                Utils.showToast('Please provide a signature first.', 'error');
+                return;
+            }
+            const dataURL = signaturePad.toDataURL();
+            const link = document.createElement('a');
+            link.download = 'signature.png';
+            link.href = dataURL;
+            link.click();
+            Utils.showToast('Signature downloaded!', 'success');
+        });
+    </script>
+</body>
+</html>

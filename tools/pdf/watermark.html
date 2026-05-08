@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Watermark to PDF - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Add Watermark</h1>
+            <p>Protect your PDF with custom text watermarks across all pages.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-copyright"></i>
+            <h2>Select PDF File</h2>
+            <p>Add text or labels to your document</p>
+            <input type="file" id="pdf-input" accept="application/pdf" style="display: none">
+            <button class="btn btn-primary">Choose PDF</button>
+        </div>
+
+        <div id="workspace" style="display: none; max-width: 600px; margin: 2rem auto">
+            <div class="box" style="padding: 2rem">
+                <h3 id="file-name">filename.pdf</h3>
+                <hr style="margin: 1.5rem 0; opacity: 0.1">
+                
+                <div class="input-group">
+                    <label>Watermark Text</label>
+                    <input type="text" id="watermark-text" class="form-control" placeholder="CONFIDENTIAL" value="DRAFT">
+                </div>
+
+                <div class="input-group">
+                    <label>Transparency (%)</label>
+                    <input type="range" id="opacity" class="form-control" min="10" max="100" value="30">
+                </div>
+
+                <div class="input-group">
+                    <label>Rotation (Degrees)</label>
+                    <input type="number" id="rotation" class="form-control" value="45">
+                </div>
+
+                <button id="process-btn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 2rem">
+                    <i class="fas fa-magic"></i> Add Watermark
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="result-screen">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h2>Success!</h2>
+            <p>Watermark has been applied to all pages.</p>
+            <div class="flex gap-4" style="justify-content: center; margin-top: 2rem">
+                <button id="download-final" class="btn btn-primary btn-lg">Download PDF</button>
+                <button onclick="location.reload()" class="btn btn-outline">Apply More</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const pdfInput = document.getElementById('pdf-input');
+        const workspace = document.getElementById('workspace');
+        const processBtn = document.getElementById('process-btn');
+        const resultScreen = document.getElementById('result-screen');
+        const downloadFinal = document.getElementById('download-final');
+
+        let originalBuffer = null;
+        let processedBlob = null;
+
+        pdfInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            originalBuffer = await file.arrayBuffer();
+            document.getElementById('file-name').textContent = file.name;
+            workspace.style.display = 'block';
+            document.getElementById('upload-zone').style.display = 'none';
+        });
+
+        processBtn.addEventListener('click', async () => {
+            if (!originalBuffer) return;
+
+            processBtn.disabled = true;
+            processBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Applying...';
+
+            try {
+                const { PDFDocument, StandardFonts, rgb, degrees } = PDFLib;
+                const pdfDoc = await PDFDocument.load(originalBuffer);
+                const pages = pdfDoc.getPages();
+                const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+                const text = document.getElementById('watermark-text').value || 'DRAFT';
+                const opacity = (parseInt(document.getElementById('opacity').value) || 30) / 100;
+                const rot = parseInt(document.getElementById('rotation').value) || 45;
+
+                pages.forEach(page => {
+                    const { width, height } = page.getSize();
+                    page.drawText(text, {
+                        x: width / 4,
+                        y: height / 2,
+                        size: 50,
+                        font,
+                        color: rgb(0.7, 0.7, 0.7),
+                        opacity,
+                        rotate: degrees(rot),
+                    });
+                });
+
+                const pdfBytes = await pdfDoc.save();
+                processedBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+                
+                workspace.style.display = 'none';
+                resultScreen.style.display = 'block';
+                Utils.showToast('Watermark added!', 'success');
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Error processing PDF', 'error');
+            } finally {
+                processBtn.disabled = false;
+                processBtn.innerHTML = '<i class="fas fa-magic"></i> Add Watermark';
+            }
+        });
+
+        downloadFinal.addEventListener('click', () => {
+            if (processedBlob) Utils.downloadBlob(processedBlob, 'watermarked_document.pdf');
+        });
+    </script>
+</body>
+</html>

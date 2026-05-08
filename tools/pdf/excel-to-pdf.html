@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel to PDF Converter - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    <style>
+        .preview-container {
+            max-width: 100%;
+            overflow-x: auto;
+            background: white;
+            color: black;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            margin-top: 2rem;
+            box-shadow: var(--shadow);
+        }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Excel to PDF</h1>
+            <p>Convert your Excel spreadsheets (XLSX, XLS, CSV) into professional PDF tables.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-file-excel"></i>
+            <h2>Select Excel File</h2>
+            <p>Upload XLSX, XLS, or CSV</p>
+            <input type="file" id="file-input" accept=".xlsx, .xls, .csv" style="display: none">
+            <button class="btn btn-primary">Choose File</button>
+        </div>
+
+        <div id="workspace" style="display: none">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem">
+                <h3 id="file-name">filename.xlsx</h3>
+                <button id="convert-btn" class="btn btn-primary">
+                    <i class="fas fa-file-pdf"></i> Convert to PDF
+                </button>
+            </div>
+            <div class="preview-container" id="preview-container">
+                <!-- Excel data preview will appear here -->
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="result-screen">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h2>Conversion Complete!</h2>
+            <p>Your Excel data has been converted to a PDF document.</p>
+            
+            <div class="flex gap-4" style="justify-content: center; margin-top: 2rem">
+                <button id="download-final" class="btn btn-primary btn-lg">
+                    <i class="fas fa-download"></i> Download PDF
+                </button>
+                <button onclick="location.reload()" class="btn btn-outline">
+                    <i class="fas fa-redo"></i> Convert Another
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const workspace = document.getElementById('workspace');
+        const previewContainer = document.getElementById('preview-container');
+        const convertBtn = document.getElementById('convert-btn');
+        const resultScreen = document.getElementById('result-screen');
+        
+        let excelData = null;
+
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                excelData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                
+                renderPreview(excelData);
+                document.getElementById('file-name').textContent = file.name;
+                workspace.style.display = 'block';
+                document.getElementById('upload-zone').style.display = 'none';
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function renderPreview(data) {
+            let html = '<table>';
+            data.slice(0, 10).forEach((row, rowIndex) => {
+                html += '<tr>';
+                row.forEach(cell => {
+                    html += rowIndex === 0 ? `<th>${cell || ''}</th>` : `<td>${cell || ''}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</table>';
+            if (data.length > 10) html += `<p style="color: #666; margin-top: 1rem">Showing first 10 rows of ${data.length}</p>`;
+            previewContainer.innerHTML = html;
+        }
+
+        convertBtn.addEventListener('click', () => {
+            if (!excelData) return;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.autoTable({
+                head: [excelData[0]],
+                body: excelData.slice(1),
+                theme: 'striped',
+                headStyles: { fillOver: [99, 102, 241] },
+                margin: { top: 20 }
+            });
+
+            window.finalPdf = doc;
+            workspace.style.display = 'none';
+            resultScreen.style.display = 'block';
+            Utils.showToast('Excel converted to PDF!', 'success');
+        });
+
+        document.getElementById('download-final').addEventListener('click', () => {
+            if (window.finalPdf) window.finalPdf.save('smarttools-excel.pdf');
+        });
+    </script>
+</body>
+</html>

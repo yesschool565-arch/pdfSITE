@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to PDF Converter - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    
+    <style>
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .img-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            position: relative;
+        }
+
+        .img-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 0.25rem;
+        }
+
+        .remove-img {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Image to PDF</h1>
+            <p>Convert JPG, PNG, WEBP, and more into a single professional PDF document.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-images"></i>
+            <h2>Select Images</h2>
+            <p>Drag and drop JPG, PNG, or WEBP files</p>
+            <input type="file" id="img-input" multiple accept="image/*" style="display: none">
+            <button class="btn btn-primary">Choose Files</button>
+        </div>
+
+        <div id="action-area" style="display: none">
+            <div class="image-grid" id="image-grid"></div>
+            
+            <div style="text-align: center">
+                <button id="convert-btn" class="btn btn-primary btn-lg">
+                    <i class="fas fa-file-pdf"></i> Create PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="result-screen">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h2>PDF Created!</h2>
+            <p>Your images have been converted into a PDF document.</p>
+            
+            <div class="flex gap-4" style="justify-content: center; margin-top: 2rem">
+                <button id="download-final" class="btn btn-primary btn-lg">
+                    <i class="fas fa-download"></i> Download PDF
+                </button>
+                <button onclick="location.reload()" class="btn btn-outline">
+                    <i class="fas fa-redo"></i> Create Another
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div id="loading-overlay" class="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; flex-direction: column; justify-content: center; align-items: center; color: white;">
+        <div class="spinner"></div>
+        <p style="margin-top: 1rem">Generating PDF...</p>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const imgInput = document.getElementById('img-input');
+        const imageGrid = document.getElementById('image-grid');
+        const actionArea = document.getElementById('action-area');
+        const convertBtn = document.getElementById('convert-btn');
+        const loading = document.getElementById('loading-overlay');
+        
+        const resultScreen = document.getElementById('result-screen');
+        const downloadFinal = document.getElementById('download-final');
+
+        let selectedImages = [];
+        let createdPdfDoc = null;
+
+        imgInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    selectedImages.push({
+                        name: file.name,
+                        data: event.target.result
+                    });
+                    renderImages();
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        function renderImages() {
+            if (selectedImages.length > 0) {
+                actionArea.style.display = 'block';
+                document.getElementById('upload-zone').style.display = 'none';
+                imageGrid.innerHTML = selectedImages.map((img, index) => `
+                    <div class="img-item">
+                        <img src="${img.data}">
+                        <div class="remove-img" onclick="removeImg(${index})">
+                            <i class="fas fa-times"></i>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                actionArea.style.display = 'none';
+                document.getElementById('upload-zone').style.display = 'block';
+            }
+        }
+
+        window.removeImg = (index) => {
+            selectedImages.splice(index, 1);
+            renderImages();
+        };
+
+        convertBtn.addEventListener('click', async () => {
+            if (selectedImages.length === 0) return;
+            
+            loading.style.display = 'flex';
+            
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                for (let i = 0; i < selectedImages.length; i++) {
+                    const img = selectedImages[i];
+                    if (i > 0) doc.addPage();
+                    
+                    const props = doc.getImageProperties(img.data);
+                    const pageWidth = doc.internal.pageSize.getWidth();
+                    const pageHeight = doc.internal.pageSize.getHeight();
+                    
+                    const ratio = Math.min(pageWidth / props.width, pageHeight / props.height);
+                    const width = props.width * ratio;
+                    const height = props.height * ratio;
+                    
+                    const x = (pageWidth - width) / 2;
+                    const y = (pageHeight - height) / 2;
+
+                    doc.addImage(img.data, 'JPEG', x, y, width, height);
+                }
+
+                createdPdfDoc = doc;
+                actionArea.style.display = 'none';
+                resultScreen.style.display = 'block';
+                Utils.showToast('PDF created successfully!', 'success');
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Error creating PDF', 'error');
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        downloadFinal.addEventListener('click', () => {
+            if (createdPdfDoc) createdPdfDoc.save('smarttools-images.pdf');
+        });
+    </script>
+</body>
+</html>

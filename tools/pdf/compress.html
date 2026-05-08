@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compress PDF Online - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Compress PDF</h1>
+            <p>Reduce the size of your PDF while maintaining quality.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-file-pdf"></i>
+            <h2>Select PDF</h2>
+            <p>Upload the file you want to compress</p>
+            <input type="file" id="pdf-input" accept="application/pdf" style="display: none">
+            <button class="btn btn-primary">Choose PDF</button>
+        </div>
+
+        <div id="settings-area" style="display: none; max-width: 600px; margin: 2rem auto; text-align: center">
+            <div class="setting-item">
+                <label>Compression Level</label>
+                <select id="compression-level" class="form-control" style="margin-top: 1rem">
+                    <option value="0.7">Recommended (High Quality)</option>
+                    <option value="0.4">Medium (Smaller Size)</option>
+                    <option value="0.1">Extreme (Lowest Size)</option>
+                </select>
+            </div>
+            
+            <button id="compress-btn" class="btn btn-primary btn-lg" style="margin-top: 2rem; width: 100%">
+                <i class="fas fa-compress-arrows-alt"></i> Compress PDF
+            </button>
+        </div>
+    </main>
+
+    <div id="loading-overlay" class="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; flex-direction: column; justify-content: center; align-items: center; color: white;">
+        <div class="spinner"></div>
+        <p style="margin-top: 1rem" id="loading-text">Optimizing PDF...</p>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        const pdfInput = document.getElementById('pdf-input');
+        const settingsArea = document.getElementById('settings-area');
+        const compressBtn = document.getElementById('compress-btn');
+        const levelSelect = document.getElementById('compression-level');
+        const loading = document.getElementById('loading-overlay');
+
+        let originalFile = null;
+
+        pdfInput.addEventListener('change', (e) => {
+            originalFile = e.target.files[0];
+            if (originalFile) settingsArea.style.display = 'block';
+        });
+
+        compressBtn.addEventListener('click', async () => {
+            if (!originalFile) return;
+
+            loading.style.display = 'flex';
+            const quality = parseFloat(levelSelect.value);
+
+            try {
+                const arrayBuffer = await originalFile.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                const { jsPDF } = window.jspdf;
+                const outPdf = new jsPDF();
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    if (i > 1) outPdf.addPage();
+                    
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    
+                    const imgData = canvas.toDataURL('image/jpeg', quality);
+                    
+                    const pageWidth = outPdf.internal.pageSize.getWidth();
+                    const pageHeight = outPdf.internal.pageSize.getHeight();
+                    outPdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight);
+                }
+
+                outPdf.save('compressed-smarttools.pdf');
+                Utils.showToast('PDF compressed successfully!', 'success');
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Error compressing PDF', 'error');
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

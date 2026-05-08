@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merge PDF Online - SmartTools Hub</title>
+    
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    
+    <style>
+        .tool-header {
+            text-align: center;
+            padding: 4rem 0 2rem;
+        }
+
+        .tool-header h1 {
+            font-size: 2.5rem;
+            font-family: 'Outfit', sans-serif;
+            margin-bottom: 1rem;
+        }
+
+        .file-list {
+            max-width: 800px;
+            margin: 2rem auto;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .file-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .file-info i {
+            color: #ef4444;
+            font-size: 1.5rem;
+        }
+
+        .remove-file {
+            color: #ef4444;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .action-container {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+            <div class="nav-actions">
+                <button id="theme-toggle" class="btn-icon">
+                    <i class="fas fa-sun"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="tool-header">
+            <h1>Merge PDF Files</h1>
+            <p>Combine multiple PDF documents into a single file in seconds.</p>
+        </div>
+
+        <!-- Upload Area -->
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-file-pdf"></i>
+            <h2>Select PDF files</h2>
+            <p>or drag and drop them here</p>
+            <input type="file" id="pdf-input" multiple accept="application/pdf" style="display: none">
+            <button class="btn btn-primary">Choose Files</button>
+        </div>
+
+        <!-- File List -->
+        <div id="file-list-container" style="display: none">
+            <div class="file-list" id="file-list">
+                <!-- Files will be added here -->
+            </div>
+            
+            <div class="action-container">
+                <button id="merge-btn" class="btn btn-primary btn-lg" style="padding: 1rem 3rem; font-size: 1.1rem">
+                    <i class="fas fa-object-group"></i> Merge PDF
+                </button>
+                <p style="margin-top: 1rem; opacity: 0.6; font-size: 0.9rem">Your files are processed locally and never leave your computer.</p>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="result-screen">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h2>PDF Merged!</h2>
+            <p>Your PDF files have been successfully combined.</p>
+            
+            <div class="flex gap-4" style="justify-content: center; margin-top: 2rem">
+                <button id="download-final" class="btn btn-primary btn-lg">
+                    <i class="fas fa-download"></i> Download Merged PDF
+                </button>
+                <button onclick="location.reload()" class="btn btn-outline">
+                    <i class="fas fa-redo"></i> Merge More
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner" style="width: 50px; height: 50px; border-width: 4px"></div>
+        <h2 id="loading-text">Merging PDFs...</h2>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="../../index.html" class="logo">
+                        <i class="fas fa-bolt"></i> SmartTools
+                    </a>
+                    <p>Your one-stop destination for browser-based utility tools. 100% Free & Secure. Your privacy is our priority.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>PDF Tools</h4>
+                    <ul>
+                        <li><a href="merge.html">Merge PDF</a></li>
+                        <li><a href="compress.html">Compress PDF</a></li>
+                        <li><a href="split.html">Split PDF</a></li>
+                        <li><a href="rotate.html">Rotate PDF</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Image Tools</h4>
+                    <ul>
+                        <li><a href="../image/resize.html">Resize Image</a></li>
+                        <li><a href="../image/crop.html">Crop Image</a></li>
+                        <li><a href="../image/filters.html">Image Filters</a></li>
+                        <li><a href="../extra/palette.html">Palette Gen</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="../../about.html">About Us</a></li>
+                        <li><a href="../../contact.html">Contact</a></li>
+                        <li><a href="../../faq.html">FAQ</a></li>
+                        <li><a href="../../privacy.html">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; 2026 SmartTools Hub. All rights reserved. Built with <i class="fas fa-heart" style="color: #ef4444"></i> for the web.
+            </div>
+        </div>
+    </footer>
+
+    <div id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+    
+    <script>
+        const pdfInput = document.getElementById('pdf-input');
+        const fileListContainer = document.getElementById('file-list-container');
+        const fileList = document.getElementById('file-list');
+        const mergeBtn = document.getElementById('merge-btn');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const resultScreen = document.getElementById('result-screen');
+        const downloadFinal = document.getElementById('download-final');
+        
+        let selectedFiles = [];
+        let mergedBlob = null;
+
+        pdfInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            addFiles(files);
+        });
+
+        function addFiles(files) {
+            files.forEach(file => {
+                if (file.type === 'application/pdf') {
+                    selectedFiles.push(file);
+                } else {
+                    Utils.showToast(`${file.name} is not a PDF`, 'error');
+                }
+            });
+            renderFileList();
+        }
+
+        function renderFileList() {
+            if (selectedFiles.length > 0) {
+                fileListContainer.style.display = 'block';
+                fileList.innerHTML = selectedFiles.map((file, index) => `
+                    <div class="file-item animate-fade-in">
+                        <div class="file-info">
+                            <i class="fas fa-file-pdf"></i>
+                            <div>
+                                <div style="font-weight: 600">${file.name}</div>
+                                <div style="font-size: 0.8rem; opacity: 0.6">${Utils.formatSize(file.size)}</div>
+                            </div>
+                        </div>
+                        <div class="remove-file" onclick="removeFile(${index})">
+                            <i class="fas fa-times"></i>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                fileListContainer.style.display = 'none';
+            }
+        }
+
+        window.removeFile = (index) => {
+            selectedFiles.splice(index, 1);
+            renderFileList();
+        };
+
+        mergeBtn.addEventListener('click', async () => {
+            if (selectedFiles.length < 2) {
+                Utils.showToast('Please select at least 2 PDF files to merge', 'error');
+                return;
+            }
+
+            loadingOverlay.style.display = 'flex';
+            
+            try {
+                const { PDFDocument } = PDFLib;
+                const mergedPdf = await PDFDocument.create();
+
+                for (const file of selectedFiles) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await PDFDocument.load(arrayBuffer);
+                    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                    copiedPages.forEach((page) => mergedPdf.addPage(page));
+                }
+
+                const pdfBytes = await mergedPdf.save();
+                mergedBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+                
+                fileListContainer.style.display = 'none';
+                document.getElementById('upload-zone').style.display = 'none';
+                resultScreen.style.display = 'block';
+                Utils.showToast('PDFs merged successfully!', 'success');
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Error merging PDFs. Make sure files are not corrupted.', 'error');
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        });
+
+        downloadFinal.addEventListener('click', () => {
+            if (mergedBlob) Utils.downloadBlob(mergedBlob, 'merged-smarttools.pdf');
+        });
+    </script>
+</body>
+</html>

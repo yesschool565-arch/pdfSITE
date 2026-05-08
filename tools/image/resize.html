@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resize & Compress Image - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    
+    <style>
+        .resize-workspace {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 992px) {
+            .resize-workspace { grid-template-columns: 1fr; }
+        }
+
+        .image-preview-container {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+        }
+
+        #preview-img {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .settings-panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            height: fit-content;
+        }
+
+        .setting-item {
+            margin-bottom: 1.5rem;
+        }
+
+        .setting-item label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            accent-color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Resize & Compress Image</h1>
+            <p>Optimize your images for the web in seconds.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-compress-arrows-alt"></i>
+            <h2>Select Image</h2>
+            <p>JPG, PNG, or WEBP</p>
+            <input type="file" id="image-input" accept="image/*" style="display: none">
+            <button class="btn btn-primary">Choose Image</button>
+        </div>
+
+        <div id="workspace" style="display: none">
+            <div class="resize-workspace">
+                <div class="image-preview-container">
+                    <img id="preview-img" src="" alt="Preview">
+                </div>
+
+                <div class="settings-panel">
+                    <h3>Settings</h3>
+                    <hr style="margin: 1rem 0; opacity: 0.1">
+
+                    <div class="setting-item">
+                        <label>Target Width (px)</label>
+                        <input type="number" id="width-input" class="form-control" placeholder="Original">
+                    </div>
+
+                    <div class="setting-item">
+                        <label>Compression Mode</label>
+                        <select id="comp-mode" class="form-control">
+                            <option value="quality">Quality Percentage</option>
+                            <option value="size">Target File Size (KB)</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-item" id="quality-group">
+                        <label>Quality (<span id="quality-val">80</span>%)</label>
+                        <div class="range-container">
+                            <input type="range" id="quality-input" min="10" max="100" value="80">
+                        </div>
+                    </div>
+
+                    <div class="setting-item" id="size-group" style="display: none">
+                        <label>Target File Size (KB)</label>
+                        <input type="number" id="target-size-input" class="form-control" placeholder="e.g. 100">
+                        <p style="font-size: 0.75rem; opacity: 0.6; margin-top: 0.5rem">We will try to get as close as possible.</p>
+                    </div>
+
+                    <div class="setting-item">
+                        <label>Output Format</label>
+                        <select id="format-input" class="form-control">
+                            <option value="original">Keep Original</option>
+                            <option value="image/jpeg">JPEG (Best for photos)</option>
+                            <option value="image/png">PNG (Best for icons/transparency)</option>
+                            <option value="image/webp">WebP (Modern & Small)</option>
+                            <option value="image/avif">AVIF (Ultra Compression)</option>
+                            <option value="image/gif">GIF</option>
+                            <option value="image/bmp">BMP</option>
+                            <option value="image/tiff">TIFF</option>
+                        </select>
+                    </div>
+
+                    <button id="process-btn" class="btn btn-primary" style="width: 100%; padding: 1rem">
+                        <i class="fas fa-cog"></i> Process Image
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="result-screen">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h2>Image Ready!</h2>
+            <p>Your image has been optimized and is ready for download.</p>
+            
+            <div class="result-preview">
+                <img id="result-img" src="">
+            </div>
+
+            <div class="flex gap-4" style="justify-content: center">
+                <button id="download-final" class="btn btn-primary btn-lg">
+                    <i class="fas fa-download"></i> Download Now
+                </button>
+                <button onclick="location.reload()" class="btn btn-outline">
+                    <i class="fas fa-redo"></i> Start Over
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const imageInput = document.getElementById('image-input');
+        const workspace = document.getElementById('workspace');
+        const previewImg = document.getElementById('preview-img');
+        const qualityInput = document.getElementById('quality-input');
+        const qualityVal = document.getElementById('quality-val');
+        const widthInput = document.getElementById('width-input');
+        const formatInput = document.getElementById('format-input');
+        const processBtn = document.getElementById('process-btn');
+        
+        const resultScreen = document.getElementById('result-screen');
+        const resultImg = document.getElementById('result-img');
+        const downloadFinal = document.getElementById('download-final');
+
+        const compMode = document.getElementById('comp-mode');
+        const qualityGroup = document.getElementById('quality-group');
+        const sizeGroup = document.getElementById('size-group');
+        const targetSizeInput = document.getElementById('target-size-input');
+
+        let originalFile = null;
+        let processedBlob = null;
+
+        compMode.addEventListener('change', () => {
+            if (compMode.value === 'quality') {
+                qualityGroup.style.display = 'block';
+                sizeGroup.style.display = 'none';
+            } else {
+                qualityGroup.style.display = 'none';
+                sizeGroup.style.display = 'block';
+            }
+        });
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            originalFile = file;
+            previewImg.src = URL.createObjectURL(file);
+            workspace.style.display = 'block';
+            document.getElementById('upload-zone').style.display = 'none';
+            
+            const img = new Image();
+            img.onload = () => { widthInput.value = img.width; };
+            img.src = previewImg.src;
+        });
+
+        qualityInput.addEventListener('input', (e) => { qualityVal.textContent = e.target.value; });
+
+        async function compressToSize(file, targetSizeKB, width, mimeType) {
+            let quality = 0.9;
+            let resultBlob = null;
+            const targetBytes = targetSizeKB * 1024;
+
+            // Simple iterative approach
+            for (let i = 0; i < 6; i++) {
+                resultBlob = await new Promise((resolve, reject) => {
+                    new Compressor(file, {
+                        quality: quality,
+                        width: width,
+                        mimeType: mimeType,
+                        success: resolve,
+                        error: reject
+                    });
+                });
+
+                if (resultBlob.size <= targetBytes || quality <= 0.2) {
+                    break;
+                }
+                quality -= 0.15;
+            }
+            return resultBlob;
+        }
+
+        processBtn.addEventListener('click', async () => {
+            if (!originalFile) return;
+
+            processBtn.disabled = true;
+            processBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            const targetMime = formatInput.value === 'original' ? originalFile.type : formatInput.value;
+            const width = widthInput.value || undefined;
+
+            try {
+                if (compMode.value === 'size' && targetSizeInput.value) {
+                    processedBlob = await compressToSize(originalFile, parseInt(targetSizeInput.value), width, targetMime);
+                } else {
+                    processedBlob = await new Promise((resolve, reject) => {
+                        new Compressor(originalFile, {
+                            quality: qualityInput.value / 100,
+                            width: width,
+                            mimeType: targetMime,
+                            success: resolve,
+                            error: reject
+                        });
+                    });
+                }
+
+                resultImg.src = URL.createObjectURL(processedBlob);
+                workspace.style.display = 'none';
+                resultScreen.style.display = 'block';
+                
+                // Show final size in result
+                const sizeInfo = document.createElement('p');
+                sizeInfo.style.fontWeight = 'bold';
+                sizeInfo.style.marginTop = '1rem';
+                sizeInfo.textContent = `Final Size: ${Utils.formatSize(processedBlob.size)}`;
+                resultScreen.insertBefore(sizeInfo, resultScreen.querySelector('.result-preview'));
+
+                Utils.showToast('Image processed successfully!', 'success');
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Error processing image', 'error');
+            } finally {
+                processBtn.disabled = false;
+                processBtn.innerHTML = '<i class="fas fa-cog"></i> Process Image';
+            }
+        });
+
+        downloadFinal.addEventListener('click', () => {
+            if (!processedBlob) return;
+            const mime = processedBlob.type;
+            let ext = mime.split('/')[1];
+            if (ext === 'jpeg') ext = 'jpg';
+            Utils.downloadBlob(processedBlob, `smarttools-optimized.${ext}`);
+        });
+    </script>
+</body>
+</html>

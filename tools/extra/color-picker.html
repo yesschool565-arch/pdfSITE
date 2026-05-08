@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Color Picker - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    
+    <style>
+        .picker-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 600px) {
+            .picker-container { grid-template-columns: 1fr; }
+        }
+
+        .preview-box {
+            height: 250px;
+            border-radius: 1rem;
+            border: 4px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            color: white;
+        }
+
+        .color-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .hex-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .swatch-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .swatch {
+            aspect-ratio: 1;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: transform 0.2s;
+        }
+
+        .swatch:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Advanced Color Picker</h1>
+            <p>Pick, adjust and copy colors in HEX, RGB, and HSL formats.</p>
+        </div>
+
+        <div class="picker-container">
+            <div class="preview-box" id="color-preview">#6366F1</div>
+
+            <div class="color-inputs">
+                <div class="input-group">
+                    <label>Pick Color</label>
+                    <input type="color" id="main-picker" class="form-control" style="height: 60px; padding: 5px" value="#6366f1">
+                </div>
+
+                <div class="hex-group">
+                    <input type="text" id="hex-val" class="form-control" value="#6366F1">
+                    <button class="btn btn-icon" onclick="copy('hex-val')"><i class="fas fa-copy"></i></button>
+                </div>
+
+                <div class="hex-group">
+                    <input type="text" id="rgb-val" class="form-control" value="rgb(99, 102, 241)" readonly>
+                    <button class="btn btn-icon" onclick="copy('rgb-val')"><i class="fas fa-copy"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="container" style="max-width: 800px">
+            <h3>Presets</h3>
+            <div class="swatch-grid" id="swatch-grid"></div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const mainPicker = document.getElementById('main-picker');
+        const hexVal = document.getElementById('hex-val');
+        const rgbVal = document.getElementById('rgb-val');
+        const preview = document.getElementById('color-preview');
+        const swatchGrid = document.getElementById('swatch-grid');
+
+        const presets = ['#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#64748b'];
+
+        function updateColor(color) {
+            color = color.toUpperCase();
+            preview.style.backgroundColor = color;
+            preview.textContent = color;
+            mainPicker.value = color;
+            hexVal.value = color;
+            
+            // Convert to RGB
+            const r = parseInt(color.slice(1,3), 16);
+            const g = parseInt(color.slice(3,5), 16);
+            const b = parseInt(color.slice(5,7), 16);
+            rgbVal.value = `rgb(${r}, ${g}, ${b})`;
+            
+            // Adjust text color based on brightness
+            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+            preview.style.color = brightness > 125 ? '#000' : '#fff';
+        }
+
+        mainPicker.addEventListener('input', (e) => updateColor(e.target.value));
+        hexVal.addEventListener('input', (e) => {
+            if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                updateColor(e.target.value);
+            }
+        });
+
+        // Populate swatches
+        presets.forEach(p => {
+            const s = document.createElement('div');
+            s.className = 'swatch';
+            s.style.backgroundColor = p;
+            s.onclick = () => updateColor(p);
+            swatchGrid.appendChild(s);
+        });
+
+        window.copy = (id) => {
+            const el = document.getElementById(id);
+            el.select();
+            document.execCommand('copy');
+            Utils.showToast('Color copied!', 'success');
+        };
+
+        updateColor('#6366f1');
+    </script>
+</body>
+</html>

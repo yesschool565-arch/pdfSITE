@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Image Converter - JPG, PNG, WEBP, AVIF - SmartTools Hub</title>
+    <meta name="description" content="Fast and free online image converter. Convert between JPG, PNG, WEBP, and AVIF formats entirely in your browser.">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Universal Image Converter</h1>
+            <p>Convert your photos to any format instantly. Privacy-focused processing.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-sync"></i>
+            <h2>Select Image</h2>
+            <p>Supports JPG, PNG, WEBP, AVIF</p>
+            <input type="file" id="image-input" accept="image/*" style="display: none">
+            <button class="btn btn-primary">Choose Image</button>
+        </div>
+
+        <div id="workspace" style="display: none; max-width: 600px; margin: 2rem auto">
+            <div class="box" style="padding: 2rem; text-align: center">
+                <img id="preview" style="max-width: 100%; border-radius: 0.5rem; margin-bottom: 2rem; box-shadow: var(--shadow)">
+                
+                <div class="input-group">
+                    <label>Target Format</label>
+                    <select id="target-format" class="form-control">
+                        <option value="image/jpeg">JPG / JPEG</option>
+                        <option value="image/png">PNG</option>
+                        <option value="image/webp">WEBP</option>
+                    </select>
+                </div>
+
+                <div id="quality-container" class="input-group">
+                    <label>Quality (0-100)</label>
+                    <input type="range" id="quality" class="form-control" min="1" max="100" value="90">
+                </div>
+
+                <button id="convert-btn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 2rem">
+                    <i class="fas fa-magic"></i> Convert Image
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="result-screen">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h2>Conversion Complete!</h2>
+            <p>Your image has been converted successfully.</p>
+            <div class="flex gap-4" style="justify-content: center; margin-top: 2rem">
+                <button id="download-final" class="btn btn-primary btn-lg">Download Image</button>
+                <button onclick="location.reload()" class="btn btn-outline">Convert Another</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const imageInput = document.getElementById('image-input');
+        const workspace = document.getElementById('workspace');
+        const preview = document.getElementById('preview');
+        const targetFormat = document.getElementById('target-format');
+        const qualityInput = document.getElementById('quality');
+        const convertBtn = document.getElementById('convert-btn');
+        const qualityContainer = document.getElementById('quality-container');
+
+        let originalImage = null;
+        let finalBlob = null;
+
+        targetFormat.addEventListener('change', () => {
+            qualityContainer.style.display = targetFormat.value === 'image/png' ? 'none' : 'block';
+        });
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImage = img;
+                    preview.src = event.target.result;
+                    workspace.style.display = 'block';
+                    document.getElementById('upload-zone').style.display = 'none';
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        convertBtn.addEventListener('click', () => {
+            if (!originalImage) return;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = originalImage.width;
+            canvas.height = originalImage.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(originalImage, 0, 0);
+
+            const format = targetFormat.value;
+            const quality = parseInt(qualityInput.value) / 100;
+
+            canvas.toBlob((blob) => {
+                finalBlob = blob;
+                workspace.style.display = 'none';
+                document.getElementById('result-screen').style.display = 'block';
+                Utils.showToast('Image converted!', 'success');
+            }, format, quality);
+        });
+
+        document.getElementById('download-final').addEventListener('click', () => {
+            if (finalBlob) {
+                const ext = targetFormat.value.split('/')[1];
+                Utils.downloadBlob(finalBlob, `converted-image.${ext}`);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop PDF Online - Trim PDF Pages - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    <style>
+        .crop-workspace {
+            max-width: 800px;
+            margin: 2rem auto;
+            text-align: center;
+        }
+        
+        .preview-box {
+            position: relative;
+            background: #525659;
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        #pdf-canvas {
+            display: block;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        .crop-rect {
+            position: absolute;
+            border: 2px dashed #6366f1;
+            background: rgba(99, 102, 241, 0.1);
+            cursor: move;
+            z-index: 10;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Crop PDF</h1>
+            <p>Select an area to trim your PDF pages to a specific size.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-crop-alt"></i>
+            <h2>Select PDF File</h2>
+            <p>Visual cropping for all pages</p>
+            <input type="file" id="pdf-input" accept="application/pdf" style="display: none">
+            <button class="btn btn-primary">Choose PDF</button>
+        </div>
+
+        <div id="workspace" style="display: none" class="crop-workspace">
+            <div class="preview-box" id="preview-box">
+                <canvas id="pdf-canvas"></canvas>
+                <div id="crop-rect" class="crop-rect" style="width: 200px; height: 150px; top: 50px; left: 50px"></div>
+            </div>
+
+            <div class="settings-grid">
+                <div class="input-group">
+                    <label>Crop Width (px)</label>
+                    <input type="number" id="crop-w" class="form-control" value="200">
+                </div>
+                <div class="input-group">
+                    <label>Crop Height (px)</label>
+                    <input type="number" id="crop-h" class="form-control" value="150">
+                </div>
+                <button id="crop-btn" class="btn btn-primary btn-lg" style="grid-column: span 2">
+                    <i class="fas fa-crop"></i> Apply Crop to All Pages
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="result-screen">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h2>Cropping Complete!</h2>
+            <p>Your PDF has been trimmed successfully.</p>
+            <div class="flex gap-4" style="justify-content: center; margin-top: 2rem">
+                <button id="download-final" class="btn btn-primary btn-lg">Download Cropped PDF</button>
+                <button onclick="location.reload()" class="btn btn-outline">Crop Another</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        const pdfInput = document.getElementById('pdf-input');
+        const workspace = document.getElementById('workspace');
+        const canvas = document.getElementById('pdf-canvas');
+        const cropRect = document.getElementById('crop-rect');
+        const cropWInput = document.getElementById('crop-w');
+        const cropHInput = document.getElementById('crop-h');
+        const cropBtn = document.getElementById('crop-btn');
+
+        let originalBuffer = null;
+        let pdfDoc = null;
+        let finalBlob = null;
+        let scale = 1.0;
+
+        // Sync inputs with rect
+        cropWInput.addEventListener('input', () => cropRect.style.width = cropWInput.value + 'px');
+        cropHInput.addEventListener('input', () => cropRect.style.height = cropHInput.value + 'px');
+
+        // Simple drag logic for crop rect
+        let isDragging = false;
+        let startX, startY;
+
+        cropRect.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - cropRect.offsetLeft;
+            startY = e.clientY - cropRect.offsetTop;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            cropRect.style.left = (e.clientX - startX) + 'px';
+            cropRect.style.top = (e.clientY - startY) + 'px';
+        });
+
+        document.addEventListener('mouseup', () => isDragging = false);
+
+        pdfInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            originalBuffer = await file.arrayBuffer();
+            pdfDoc = await pdfjsLib.getDocument({ data: originalBuffer }).promise;
+            
+            const page = await pdfDoc.getPage(1);
+            const viewport = page.getViewport({ scale: 1.0 });
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+            
+            workspace.style.display = 'block';
+            document.getElementById('upload-zone').style.display = 'none';
+        });
+
+        cropBtn.addEventListener('click', async () => {
+            cropBtn.disabled = true;
+            cropBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cropping...';
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const doc = await PDFDocument.load(originalBuffer);
+                const pages = doc.getPages();
+                
+                const rectLeft = parseInt(cropRect.style.left);
+                const rectTop = parseInt(cropRect.style.top);
+                const rectWidth = parseInt(cropRect.style.width);
+                const rectHeight = parseInt(cropRect.style.height);
+
+                pages.forEach(page => {
+                    const { width, height } = page.getSize();
+                    // Map canvas units to PDF units
+                    const pdfW = (rectWidth / canvas.width) * width;
+                    const pdfH = (rectHeight / canvas.height) * height;
+                    const pdfX = (rectLeft / canvas.width) * width;
+                    const pdfY = height - ((rectTop / canvas.height) * height) - pdfH;
+
+                    page.setCropBox(pdfX, pdfY, pdfW, pdfH);
+                });
+
+                const pdfBytes = await doc.save();
+                finalBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+                
+                workspace.style.display = 'none';
+                document.getElementById('result-screen').style.display = 'block';
+                Utils.showToast('PDF cropped successfully!', 'success');
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Error cropping PDF', 'error');
+            } finally {
+                cropBtn.disabled = false;
+                cropBtn.innerHTML = '<i class="fas fa-crop"></i> Apply Crop';
+            }
+        });
+
+        document.getElementById('download-final').addEventListener('click', () => {
+            if (finalBlob) Utils.downloadBlob(finalBlob, 'cropped_document.pdf');
+        });
+    </script>
+</body>
+</html>

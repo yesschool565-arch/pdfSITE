@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Split PDF - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    
+    <style>
+        .split-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .page-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .page-card.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .page-card i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Split PDF</h1>
+            <p>Select specific pages to extract into a new PDF document.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-file-pdf"></i>
+            <h2>Select PDF</h2>
+            <p>Upload the file you want to split</p>
+            <input type="file" id="pdf-input" accept="application/pdf" style="display: none">
+            <button class="btn btn-primary">Choose PDF</button>
+        </div>
+
+        <div id="workspace" style="display: none">
+            <div style="text-align: center; margin-bottom: 2rem">
+                <p>Click on pages to select them for extraction.</p>
+            </div>
+            
+            <div class="split-grid" id="split-grid"></div>
+            
+            <div style="text-align: center">
+                <button id="split-btn" class="btn btn-primary btn-lg">
+                    <i class="fas fa-cut"></i> Extract Selected Pages
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const pdfInput = document.getElementById('pdf-input');
+        const workspace = document.getElementById('workspace');
+        const splitGrid = document.getElementById('split-grid');
+        const splitBtn = document.getElementById('split-btn');
+
+        let originalPdfBytes = null;
+        let selectedPages = new Set();
+        let totalPages = 0;
+
+        pdfInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            originalPdfBytes = await file.arrayBuffer();
+            const pdfDoc = await PDFLib.PDFDocument.load(originalPdfBytes);
+            totalPages = pdfDoc.getPageCount();
+
+            renderGrid();
+            workspace.style.display = 'block';
+            document.getElementById('upload-zone').style.display = 'none';
+        });
+
+        function renderGrid() {
+            splitGrid.innerHTML = '';
+            for (let i = 0; i < totalPages; i++) {
+                const card = document.createElement('div');
+                card.className = 'page-card animate-fade-in';
+                card.innerHTML = `<i class="fas fa-file"></i> Page ${i + 1}`;
+                card.onclick = () => {
+                    if (selectedPages.has(i)) {
+                        selectedPages.delete(i);
+                        card.classList.remove('selected');
+                    } else {
+                        selectedPages.add(i);
+                        card.classList.add('selected');
+                    }
+                };
+                splitGrid.appendChild(card);
+            }
+        }
+
+        splitBtn.addEventListener('click', async () => {
+            if (selectedPages.size === 0) {
+                Utils.showToast('Please select at least one page', 'error');
+                return;
+            }
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const srcDoc = await PDFDocument.load(originalPdfBytes);
+                const outDoc = await PDFDocument.create();
+                
+                const pagesToCopy = Array.from(selectedPages).sort((a, b) => a - b);
+                const copiedPages = await outDoc.copyPages(srcDoc, pagesToCopy);
+                
+                copiedPages.forEach(page => outDoc.addPage(page));
+                
+                const pdfBytes = await outDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                
+                Utils.downloadBlob(blob, 'split-smarttools.pdf');
+                Utils.showToast('PDF pages extracted!', 'success');
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Error splitting PDF', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

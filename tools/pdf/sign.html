@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign PDF Online - Add Digital Signature - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    <style>
+        .sign-workspace {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        @media (max-width: 900px) { .sign-workspace { grid-template-columns: 1fr; } }
+        
+        .pdf-viewer-box {
+            background: #525659;
+            border-radius: 1rem;
+            padding: 2rem;
+            min-height: 500px;
+            overflow: auto;
+            position: relative;
+        }
+        
+        #pdf-canvas {
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            cursor: crosshair;
+        }
+
+        .signature-pad-container {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            position: sticky;
+            top: 100px;
+        }
+
+        #signature-pad {
+            width: 100%;
+            height: 200px;
+            background: white;
+            border-radius: 0.5rem;
+            border: 1px solid #ddd;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Sign PDF</h1>
+            <p>Draw your signature and place it anywhere on your document.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-pen-nib"></i>
+            <h2>Select PDF to Sign</h2>
+            <p>Your signature stays in your browser</p>
+            <input type="file" id="pdf-input" accept="application/pdf" style="display: none">
+            <button class="btn btn-primary">Choose PDF</button>
+        </div>
+
+        <div id="workspace" style="display: none">
+            <div class="sign-workspace">
+                <div class="pdf-viewer-box">
+                    <canvas id="pdf-canvas"></canvas>
+                </div>
+
+                <div class="signature-pad-container">
+                    <h3>Draw Signature</h3>
+                    <canvas id="signature-pad"></canvas>
+                    <div class="flex gap-2">
+                        <button id="clear-pad" class="btn btn-outline" style="flex: 1">Clear</button>
+                        <button id="place-sig" class="btn btn-primary" style="flex: 2">Place on PDF</button>
+                    </div>
+                    <hr style="margin: 1.5rem 0; opacity: 0.1">
+                    <p style="font-size: 0.8rem; opacity: 0.6; margin-bottom: 1rem">Click on the PDF to choose where to place the signature.</p>
+                    <button id="save-pdf" class="btn btn-primary btn-lg" style="width: 100%">
+                        <i class="fas fa-file-download"></i> Save & Finish
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="result-screen">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h2>Signed Successfully!</h2>
+            <p>Your document has been signed and is ready for download.</p>
+            <div class="flex gap-4" style="justify-content: center; margin-top: 2rem">
+                <button id="download-final" class="btn btn-primary btn-lg">Download PDF</button>
+                <button onclick="location.reload()" class="btn btn-outline">Sign Another</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.5/dist/signature_pad.umd.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        const pdfInput = document.getElementById('pdf-input');
+        const workspace = document.getElementById('workspace');
+        const pdfCanvas = document.getElementById('pdf-canvas');
+        const sigPadCanvas = document.getElementById('signature-pad');
+        const clearPad = document.getElementById('clear-pad');
+        const placeSig = document.getElementById('place-sig');
+        const savePdf = document.getElementById('save-pdf');
+
+        let pdfDoc = null;
+        let originalBuffer = null;
+        let signaturePad = new SignaturePad(sigPadCanvas);
+        let currentPage = 1;
+        let signaturePos = { x: 0, y: 0 };
+        let finalBlob = null;
+
+        pdfInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            originalBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: originalBuffer }).promise;
+            pdfDoc = pdf;
+            renderPage(1);
+            workspace.style.display = 'block';
+            document.getElementById('upload-zone').style.display = 'none';
+        });
+
+        async function renderPage(num) {
+            const page = await pdfDoc.getPage(num);
+            const viewport = page.getViewport({ scale: 1.5 });
+            pdfCanvas.height = viewport.height;
+            pdfCanvas.width = viewport.width;
+            await page.render({ canvasContext: pdfCanvas.getContext('2d'), viewport }).promise;
+        }
+
+        pdfCanvas.addEventListener('click', (e) => {
+            const rect = pdfCanvas.getBoundingClientRect();
+            signaturePos.x = e.clientX - rect.left;
+            signaturePos.y = e.clientY - rect.top;
+            Utils.showToast('Position set. Click "Place" to apply signature.', 'info');
+        });
+
+        clearPad.addEventListener('click', () => signaturePad.clear());
+
+        savePdf.addEventListener('click', async () => {
+            if (signaturePad.isEmpty()) return Utils.showToast('Please sign first', 'error');
+
+            savePdf.disabled = true;
+            savePdf.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const doc = await PDFDocument.load(originalBuffer);
+                const page = doc.getPages()[currentPage - 1];
+                
+                const sigImage = await doc.embedPng(signaturePad.toDataURL());
+                const { width, height } = page.getSize();
+                
+                // Scale signature position from canvas to PDF units
+                const pdfX = (signaturePos.x / pdfCanvas.width) * width;
+                const pdfY = height - ((signaturePos.y / pdfCanvas.height) * height);
+
+                page.drawImage(sigImage, {
+                    x: pdfX,
+                    y: pdfY,
+                    width: 100,
+                    height: 50,
+                });
+
+                const pdfBytes = await doc.save();
+                finalBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+                
+                workspace.style.display = 'none';
+                document.getElementById('result-screen').style.display = 'block';
+                Utils.showToast('Document signed!', 'success');
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Error signing PDF', 'error');
+            } finally {
+                savePdf.disabled = false;
+                savePdf.innerHTML = '<i class="fas fa-file-download"></i> Save & Finish';
+            }
+        });
+
+        document.getElementById('download-final').addEventListener('click', () => {
+            if (finalBlob) Utils.downloadBlob(finalBlob, 'signed_document.pdf');
+        });
+    </script>
+</body>
+</html>

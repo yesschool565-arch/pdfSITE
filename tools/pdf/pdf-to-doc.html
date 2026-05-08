@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to Word Converter - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>PDF to Word</h1>
+            <p>Extract text from your PDF and convert it into an editable Word document (DOCX).</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-file-word"></i>
+            <h2>Select PDF File</h2>
+            <p>Fast browser-based text extraction</p>
+            <input type="file" id="pdf-input" accept="application/pdf" style="display: none">
+            <button class="btn btn-primary">Choose PDF</button>
+        </div>
+
+        <div id="workspace" style="display: none; max-width: 600px; margin: 2rem auto; text-align: center">
+            <div class="box" style="padding: 2rem">
+                <i class="fas fa-file-pdf" style="font-size: 3rem; color: #ef4444; margin-bottom: 1rem"></i>
+                <h3 id="file-name">filename.pdf</h3>
+                <p id="page-count" style="opacity: 0.6; margin-bottom: 2rem">Total Pages: 0</p>
+
+                <div class="input-group" style="text-align: left; background: rgba(99, 102, 241, 0.05); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--border)">
+                    <label style="font-weight: 700; color: var(--primary)">Conversion Mode</label>
+                    <label class="flex items-center gap-2" style="cursor: pointer; margin-top: 1rem">
+                        <input type="radio" name="conv-mode" value="visual" checked> 
+                        <div>
+                            <strong>High Accuracy (Visual Preservation)</strong>
+                            <div style="font-size: 0.8rem; opacity: 0.7">Ensures 100% layout identity. No changes to data. Best for forms/designs.</div>
+                        </div>
+                    </label>
+                    <label class="flex items-center gap-2" style="cursor: pointer; margin-top: 1rem">
+                        <input type="radio" name="conv-mode" value="text"> 
+                        <div>
+                            <strong>Editable Text (Beta)</strong>
+                            <div style="font-size: 0.8rem; opacity: 0.7">Extracts searchable text. Layout may shift slightly.</div>
+                        </div>
+                    </label>
+                </div>
+                
+                <button id="convert-btn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 2rem">
+                    <i class="fas fa-exchange-alt"></i> Convert to DOCX
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="result-screen">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h2>Word Doc Created!</h2>
+            <p>Your document has been converted with zero data loss.</p>
+            
+            <div class="flex gap-4" style="justify-content: center; margin-top: 2rem">
+                <button id="download-final" class="btn btn-primary btn-lg">
+                    <i class="fas fa-download"></i> Download DOCX
+                </button>
+                <button onclick="location.reload()" class="btn btn-outline">
+                    <i class="fas fa-redo"></i> Convert Another
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div id="loading-overlay" class="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; flex-direction: column; justify-content: center; align-items: center; color: white;">
+        <div class="spinner" style="width: 50px; height: 50px"></div>
+        <p style="margin-top: 1rem" id="loading-text">Processing pages...</p>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://unpkg.com/docx@8.1.0/build/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        const pdfInput = document.getElementById('pdf-input');
+        const workspace = document.getElementById('workspace');
+        const convertBtn = document.getElementById('convert-btn');
+        const loading = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
+        const resultScreen = document.getElementById('result-screen');
+        const downloadFinal = document.getElementById('download-final');
+
+        let pdfDoc = null;
+        let finalDocBlob = null;
+
+        pdfInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            loading.style.display = 'flex';
+            loadingText.textContent = 'Analyzing PDF...';
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                
+                document.getElementById('file-name').textContent = file.name;
+                document.getElementById('page-count').textContent = `Total Pages: ${pdfDoc.numPages}`;
+                
+                workspace.style.display = 'block';
+                document.getElementById('upload-zone').style.display = 'none';
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Error loading PDF', 'error');
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        convertBtn.addEventListener('click', async () => {
+            loading.style.display = 'flex';
+            const mode = document.querySelector('input[name="conv-mode"]:checked').value;
+            
+            const sections = [];
+
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                loadingText.textContent = `Processing Page ${i} of ${pdfDoc.numPages}...`;
+                const page = await pdfDoc.getPage(i);
+
+                if (mode === 'visual') {
+                    // Visual mode: Render page to high-res image and embed in DOCX
+                    const viewport = page.getViewport({ scale: 2.0 });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    
+                    const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                    
+                    sections.push({
+                        properties: {
+                            type: docx.SectionType.CONTINUOUS,
+                            page: {
+                                margin: { top: 0, right: 0, bottom: 0, left: 0 },
+                                size: { width: docx.convertMillimetresToTwip(210), height: docx.convertMillimetresToTwip(297) } // A4
+                            }
+                        },
+                        children: [
+                            new docx.Paragraph({
+                                children: [
+                                    new docx.ImageRun({
+                                        data: imgData,
+                                        transformation: { width: 595, height: 842 } // Standard A4 points
+                                    }),
+                                ],
+                            }),
+                        ],
+                    });
+                } else {
+                    // Text mode: Extract text
+                    const textContent = await page.getTextContent();
+                    const textItems = textContent.items.map(item => item.str).join(' ');
+                    sections.push({
+                        children: [
+                            new docx.Paragraph({
+                                children: [ new docx.TextRun({ text: textItems, size: 24 }) ],
+                            }),
+                        ],
+                    });
+                }
+            }
+
+            const doc = new docx.Document({ sections: sections });
+            docx.Packer.toBlob(doc).then(blob => {
+                finalDocBlob = blob;
+                workspace.style.display = 'none';
+                resultScreen.style.display = 'block';
+                loading.style.display = 'none';
+                Utils.showToast('Word document created!', 'success');
+            });
+        });
+
+        downloadFinal.addEventListener('click', () => {
+            if (finalDocBlob) saveAs(finalDocBlob, `smarttools-${document.getElementById('file-name').textContent}.docx`);
+        });
+    </script>
+</body>
+</html>

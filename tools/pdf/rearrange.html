@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organize PDF - Rearrange Pages - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    <style>
+        .page-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .page-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            cursor: grab;
+            position: relative;
+            text-align: center;
+        }
+
+        .page-item:active { cursor: grabbing; }
+
+        .page-item canvas {
+            width: 100%;
+            height: auto;
+            background: white;
+            border-radius: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-number {
+            font-size: 0.8rem;
+            font-weight: 600;
+            opacity: 0.7;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ef4444;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 1rem;">
+            <h1>Organize PDF</h1>
+            <p>Drag and drop pages to rearrange them or delete unwanted pages.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-sort-amount-down"></i>
+            <h2>Select PDF File</h2>
+            <p>Visual page organizer</p>
+            <input type="file" id="pdf-input" accept="application/pdf" style="display: none">
+            <button class="btn btn-primary">Choose PDF</button>
+        </div>
+
+        <div id="workspace" style="display: none">
+            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border)">
+                <h3 id="file-name">filename.pdf</h3>
+                <button id="save-btn" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+
+            <div class="page-list" id="page-list"></div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="result-screen">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h2>PDF Organized!</h2>
+            <p>Your changes have been saved to a new PDF file.</p>
+            <div class="flex gap-4" style="justify-content: center; margin-top: 2rem">
+                <button id="download-final" class="btn btn-primary btn-lg">Download PDF</button>
+                <button onclick="location.reload()" class="btn btn-outline">Organize Another</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        const pdfInput = document.getElementById('pdf-input');
+        const workspace = document.getElementById('workspace');
+        const pageListEl = document.getElementById('page-list');
+        const saveBtn = document.getElementById('save-btn');
+
+        let originalBuffer = null;
+        let pdfDoc = null;
+        let finalBlob = null;
+        let pageIndices = []; // Stores original indices of pages
+
+        pdfInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            originalBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: originalBuffer }).promise;
+            pdfDoc = pdf;
+            
+            document.getElementById('file-name').textContent = file.name;
+            workspace.style.display = 'block';
+            document.getElementById('upload-zone').style.display = 'none';
+            
+            renderPages();
+        });
+
+        async function renderPages() {
+            pageListEl.innerHTML = '';
+            pageIndices = [];
+            
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                const page = await pdfDoc.getPage(i);
+                const viewport = page.getViewport({ scale: 0.3 });
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                await page.render({ canvasContext: context, viewport }).promise;
+
+                const item = document.createElement('div');
+                item.className = 'page-item';
+                item.setAttribute('data-index', i - 1);
+                item.innerHTML = `
+                    <div class="remove-btn" onclick="removePageItem(this)"><i class="fas fa-times"></i></div>
+                    <div class="canvas-container"></div>
+                    <div class="page-number">Page ${i}</div>
+                `;
+                item.querySelector('.canvas-container').appendChild(canvas);
+                pageListEl.appendChild(item);
+                pageIndices.push(i - 1);
+            }
+
+            new Sortable(pageListEl, {
+                animation: 150,
+                ghostClass: 'sortable-ghost'
+            });
+        }
+
+        window.removePageItem = (btn) => {
+            btn.closest('.page-item').remove();
+            Utils.showToast('Page removed', 'info');
+        };
+
+        saveBtn.addEventListener('click', async () => {
+            const items = Array.from(pageListEl.querySelectorAll('.page-item'));
+            if (items.length === 0) return Utils.showToast('No pages left!', 'error');
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const srcDoc = await PDFDocument.load(originalBuffer);
+                const destDoc = await PDFDocument.create();
+                
+                const indices = items.map(item => parseInt(item.getAttribute('data-index')));
+                const copiedPages = await destDoc.copyPages(srcDoc, indices);
+                copiedPages.forEach(page => destDoc.addPage(page));
+
+                const pdfBytes = await destDoc.save();
+                finalBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+                
+                workspace.style.display = 'none';
+                document.getElementById('result-screen').style.display = 'block';
+                Utils.showToast('PDF reorganized successfully!', 'success');
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Error saving PDF', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+            }
+        });
+
+        document.getElementById('download-final').addEventListener('click', () => {
+            if (finalBlob) Utils.downloadBlob(finalBlob, 'organized_document.pdf');
+        });
+    </script>
+</body>
+</html>

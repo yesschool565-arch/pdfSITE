@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Converter - Length, Weight, Temp - SmartTools Hub</title>
+    <meta name="description" content="Quick and easy online unit converter for length, weight, temperature, and more.">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Unit Converter</h1>
+            <p>Convert measurements instantly between different units.</p>
+        </div>
+
+        <div style="max-width: 600px; margin: 0 auto">
+            <div class="box" style="padding: 2rem">
+                <div class="input-group">
+                    <label>Category</label>
+                    <select id="category" class="form-control">
+                        <option value="length">Length</option>
+                        <option value="weight">Weight</option>
+                        <option value="temp">Temperature</option>
+                    </select>
+                </div>
+
+                <div class="grid gap-4" style="grid-template-columns: 1fr 1fr">
+                    <div class="input-group">
+                        <label>From</label>
+                        <input type="number" id="from-val" class="form-control" value="1">
+                        <select id="from-unit" class="form-control" style="margin-top: 0.5rem"></select>
+                    </div>
+                    <div class="input-group">
+                        <label>To</label>
+                        <input type="number" id="to-val" class="form-control" readonly>
+                        <select id="to-unit" class="form-control" style="margin-top: 0.5rem"></select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const units = {
+            length: {
+                m: 1,
+                km: 1000,
+                cm: 0.01,
+                mm: 0.001,
+                inch: 0.0254,
+                ft: 0.3048,
+                mile: 1609.34
+            },
+            weight: {
+                kg: 1,
+                g: 0.001,
+                mg: 0.000001,
+                lb: 0.453592,
+                oz: 0.0283495
+            },
+            temp: {
+                c: 'c',
+                f: 'f',
+                k: 'k'
+            }
+        };
+
+        const category = document.getElementById('category');
+        const fromUnit = document.getElementById('from-unit');
+        const toUnit = document.getElementById('to-unit');
+        const fromVal = document.getElementById('from-val');
+        const toVal = document.getElementById('to-val');
+
+        function populateUnits() {
+            const cat = category.value;
+            const options = Object.keys(units[cat]);
+            fromUnit.innerHTML = options.map(o => `<option value="${o}">${o.toUpperCase()}</option>`).join('');
+            toUnit.innerHTML = options.map(o => `<option value="${o}">${o.toUpperCase()}</option>`).join('');
+            if (options.length > 1) toUnit.selectedIndex = 1;
+            convert();
+        }
+
+        function convert() {
+            const cat = category.value;
+            const val = parseFloat(fromVal.value);
+            const from = fromUnit.value;
+            const to = toUnit.value;
+
+            if (isNaN(val)) return toVal.value = '';
+
+            if (cat === 'temp') {
+                let celsius;
+                if (from === 'c') celsius = val;
+                else if (from === 'f') celsius = (val - 32) * 5/9;
+                else if (from === 'k') celsius = val - 273.15;
+
+                let result;
+                if (to === 'c') result = celsius;
+                else if (to === 'f') result = (celsius * 9/5) + 32;
+                else if (to === 'k') result = celsius + 273.15;
+                toVal.value = result.toFixed(4);
+            } else {
+                const baseVal = val * units[cat][from];
+                const result = baseVal / units[cat][to];
+                toVal.value = result.toFixed(4);
+            }
+        }
+
+        category.addEventListener('change', populateUnits);
+        fromUnit.addEventListener('change', convert);
+        toUnit.addEventListener('change', convert);
+        fromVal.addEventListener('input', convert);
+
+        populateUnits();
+    </script>
+</body>
+</html>

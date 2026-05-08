@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free QR Code Generator - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    
+    <style>
+        .qr-workspace {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 992px) {
+            .qr-workspace { grid-template-columns: 1fr; }
+        }
+
+        .qr-preview {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        #qrcode {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .qr-settings {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>QR Code Generator</h1>
+            <p>Generate custom QR codes for links, text, or Wi-Fi.</p>
+        </div>
+
+        <div class="qr-workspace">
+            <div class="qr-preview">
+                <div id="qrcode"></div>
+                <button id="download-qr" class="btn btn-primary">
+                    <i class="fas fa-download"></i> Download QR Code
+                </button>
+            </div>
+
+        <div class="qr-container">
+            <div class="qr-inputs">
+                <div class="input-group">
+                    <label>Content (URL or Text)</label>
+                    <input type="text" id="qr-text" class="form-control" placeholder="https://google.com">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="input-group">
+                        <label>Foreground Color</label>
+                        <input type="color" id="qr-color-dark" class="form-control" style="height: 50px; padding: 5px" value="#000000">
+                    </div>
+                    <div class="input-group">
+                        <label>Background Color</label>
+                        <input type="color" id="qr-color-light" class="form-control" style="height: 50px; padding: 5px" value="#ffffff">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Size (px): <span id="size-val">300</span></label>
+                    <input type="range" id="qr-size" min="100" max="1000" value="300" style="width: 100%">
+                </div>
+
+                <button id="gen-btn" class="btn btn-primary" style="width: 100%; padding: 1rem">
+                    <i class="fas fa-magic"></i> Generate Custom QR
+                </button>
+            </div>
+
+            <div class="qr-preview-area">
+                <div id="qrcode"></div>
+                
+                <div id="result-actions" style="display: none; margin-top: 2rem; text-align: center">
+                    <button id="download-qr" class="btn btn-primary btn-lg">
+                        <i class="fas fa-download"></i> Download PNG
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const qrInput = document.getElementById('qr-text');
+        const colorDark = document.getElementById('qr-color-dark');
+        const colorLight = document.getElementById('qr-color-light');
+        const sizeInput = document.getElementById('qr-size');
+        const sizeVal = document.getElementById('size-val');
+        const genBtn = document.getElementById('gen-btn');
+        const qrDiv = document.getElementById('qrcode');
+        const actions = document.getElementById('result-actions');
+
+        sizeInput.addEventListener('input', (e) => sizeVal.textContent = e.target.value);
+
+        function generateQR() {
+            const text = qrInput.value.trim();
+            if (!text) {
+                Utils.showToast('Please enter some text or URL', 'error');
+                return;
+            }
+
+            qrDiv.innerHTML = '';
+            const size = parseInt(sizeInput.value);
+
+            new QRCode(qrDiv, {
+                text: text,
+                width: size,
+                height: size,
+                colorDark: colorDark.value,
+                colorLight: colorLight.value,
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            actions.style.display = 'block';
+            Utils.showToast('QR Code generated!', 'success');
+        }
+
+        genBtn.addEventListener('click', generateQR);
+
+        document.getElementById('download-qr').addEventListener('click', () => {
+            const img = qrDiv.querySelector('img');
+            if (!img) return;
+            const a = document.createElement('a');
+            a.href = img.src;
+            a.download = 'smarttools-qr.png';
+            a.click();
+            Utils.showToast('QR Code downloaded!', 'success');
+        });
+
+        // Initial
+        generateQR();
+    </script>
+</body>
+</html>

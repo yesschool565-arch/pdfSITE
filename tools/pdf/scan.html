@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan to PDF - Camera to Document - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    <style>
+        .scan-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            text-align: center;
+        }
+        
+        #camera-feed {
+            width: 100%;
+            max-width: 600px;
+            background: #000;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            transform: scaleX(1); /* No mirroring for documents */
+        }
+
+        .captured-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .captured-item {
+            position: relative;
+            aspect-ratio: 3/4;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .captured-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Scan to PDF</h1>
+            <p>Use your camera to scan documents and convert them into a professional PDF.</p>
+        </div>
+
+        <div class="scan-container">
+            <div id="camera-area">
+                <video id="camera-feed" autoplay playsinline></video>
+                <div class="flex gap-4" style="justify-content: center">
+                    <button id="capture-btn" class="btn btn-primary btn-lg">
+                        <i class="fas fa-camera"></i> Capture Page
+                    </button>
+                    <button id="finish-btn" class="btn btn-outline btn-lg" disabled>
+                        <i class="fas fa-file-pdf"></i> Create PDF (<span id="count">0</span>)
+                    </button>
+                </div>
+            </div>
+
+            <div class="captured-list" id="captured-list"></div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="result-screen">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h2>Scan Complete!</h2>
+            <p>Your document has been generated from the captured images.</p>
+            <div class="flex gap-4" style="justify-content: center; margin-top: 2rem">
+                <button id="download-final" class="btn btn-primary btn-lg">Download PDF</button>
+                <button onclick="location.reload()" class="btn btn-outline">Scan New</button>
+            </div>
+        </div>
+    </main>
+
+    <canvas id="hidden-canvas" style="display: none"></canvas>
+
+    <div id="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const video = document.getElementById('camera-feed');
+        const captureBtn = document.getElementById('capture-btn');
+        const finishBtn = document.getElementById('finish-btn');
+        const capturedList = document.getElementById('captured-list');
+        const countSpan = document.getElementById('count');
+        const canvas = document.getElementById('hidden-canvas');
+
+        let capturedImages = [];
+        let finalBlob = null;
+
+        // Start Camera
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Camera access denied or not found', 'error');
+            }
+        }
+
+        startCamera();
+
+        captureBtn.addEventListener('click', () => {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+            
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            capturedImages.push(dataUrl);
+            
+            const item = document.createElement('div');
+            item.className = 'captured-item animate-fade-in';
+            item.innerHTML = `<img src="${dataUrl}">`;
+            capturedList.appendChild(item);
+            
+            countSpan.textContent = capturedImages.length;
+            finishBtn.disabled = false;
+            Utils.showToast('Page captured!', 'success');
+        });
+
+        finishBtn.addEventListener('click', async () => {
+            if (capturedImages.length === 0) return;
+
+            finishBtn.disabled = true;
+            finishBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating PDF...';
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                for (let i = 0; i < capturedImages.length; i++) {
+                    if (i > 0) doc.addPage();
+                    const img = capturedImages[i];
+                    const props = doc.getImageProperties(img);
+                    const pageWidth = doc.internal.pageSize.getWidth();
+                    const pageHeight = doc.internal.pageSize.getHeight();
+                    const ratio = Math.min(pageWidth / props.width, pageHeight / props.height);
+                    doc.addImage(img, 'JPEG', 0, 0, props.width * ratio, props.height * ratio);
+                }
+
+                const pdfBlob = doc.output('blob');
+                finalBlob = pdfBlob;
+                
+                document.getElementById('camera-area').style.display = 'none';
+                document.getElementById('result-screen').style.display = 'block';
+                Utils.showToast('PDF scan completed!', 'success');
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Error creating PDF', 'error');
+            } finally {
+                finishBtn.disabled = false;
+            }
+        });
+
+        document.getElementById('download-final').addEventListener('click', () => {
+            if (finalBlob) Utils.downloadBlob(finalBlob, 'scanned_document.pdf');
+        });
+    </script>
+</body>
+</html>

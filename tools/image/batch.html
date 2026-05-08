@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Image Processor - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    
+    <style>
+        .batch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .batch-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .batch-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .item-status {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        .item-status.done { color: var(--secondary); font-weight: 700; }
+
+        .settings-bar {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 2rem;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Batch Image Processor</h1>
+            <p>Resize and convert multiple images at once.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-layer-group"></i>
+            <h2>Select Multiple Images</h2>
+            <p>Upload all images you want to process</p>
+            <input type="file" id="batch-input" multiple accept="image/*" style="display: none">
+            <button class="btn btn-primary">Choose Files</button>
+        </div>
+
+        <div id="workspace" style="display: none">
+            <div class="settings-bar">
+                <div class="input-group" style="margin-bottom: 0; flex: 1">
+                    <label>Target Width (px)</label>
+                    <input type="number" id="batch-width" class="form-control" placeholder="Keep Original">
+                </div>
+                <div class="input-group" style="margin-bottom: 0; flex: 1">
+                    <label>Format</label>
+                    <select id="batch-format" class="form-control">
+                        <option value="image/jpeg">JPEG</option>
+                        <option value="image/png">PNG</option>
+                        <option value="image/webp">WEBP</option>
+                    </select>
+                </div>
+                <button id="start-batch" class="btn btn-primary btn-lg" style="flex: 1">
+                    <i class="fas fa-play"></i> Process All
+                </button>
+            </div>
+
+            <div class="batch-grid" id="batch-grid"></div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const batchInput = document.getElementById('batch-input');
+        const batchGrid = document.getElementById('batch-grid');
+        const workspace = document.getElementById('workspace');
+        const startBtn = document.getElementById('start-batch');
+        
+        let files = [];
+
+        batchInput.addEventListener('change', (e) => {
+            files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            renderGrid();
+            workspace.style.display = 'block';
+            document.getElementById('upload-zone').style.display = 'none';
+        });
+
+        function renderGrid() {
+            batchGrid.innerHTML = files.map((file, i) => `
+                <div class="batch-item animate-fade-in" id="item-${i}">
+                    <img src="${URL.createObjectURL(file)}">
+                    <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem">${file.name}</div>
+                    <div class="item-status">Pending...</div>
+                </div>
+            `).join('');
+        }
+
+        startBtn.addEventListener('click', async () => {
+            const width = document.getElementById('batch-width').value || undefined;
+            const format = document.getElementById('batch-format').value;
+            const zip = new JSZip();
+            
+            startBtn.disabled = true;
+            startBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const statusEl = document.querySelector(`#item-${i} .item-status`);
+                statusEl.textContent = 'Processing...';
+
+                try {
+                    const result = await new Promise((resolve, reject) => {
+                        new Compressor(file, {
+                            quality: 0.8,
+                            width: width,
+                            mimeType: format,
+                            success: resolve,
+                            error: reject
+                        });
+                    });
+
+                    const ext = format.split('/')[1];
+                    const fileName = file.name.split('.')[0] + '.' + ext;
+                    zip.file(fileName, result);
+                    
+                    statusEl.textContent = 'Done!';
+                    statusEl.classList.add('done');
+                } catch (err) {
+                    statusEl.textContent = 'Error';
+                    console.error(err);
+                }
+            }
+
+            const content = await zip.generateAsync({ type: 'blob' });
+            Utils.downloadBlob(content, 'processed-smarttools.zip');
+            Utils.showToast('All images processed and zipped!', 'success');
+            
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<i class="fas fa-play"></i> Process All';
+        });
+    </script>
+</body>
+</html>

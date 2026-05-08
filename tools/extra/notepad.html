@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Notepad - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    
+    <style>
+        .notepad-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+            overflow: hidden;
+        }
+
+        .notepad-toolbar {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 1rem;
+            background: rgba(var(--bg), 0.5);
+        }
+
+        #notepad-area {
+            flex: 1;
+            padding: 2rem;
+            border: none;
+            background: transparent;
+            color: var(--text);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .stat-bar {
+            padding: 0.5rem 1rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.8rem;
+            opacity: 0.6;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 1rem;">
+            <h1>Online Notepad</h1>
+            <p>Simple, private, and autosaved. Your notes stay in your browser.</p>
+        </div>
+
+        <div class="notepad-container">
+            <div class="notepad-toolbar">
+                <div class="flex gap-2">
+                    <button class="btn btn-outline btn-sm" id="download-txt">
+                        <i class="fas fa-file-alt"></i> .txt
+                    </button>
+                    <button class="btn btn-outline btn-sm" id="download-pdf">
+                        <i class="fas fa-file-pdf"></i> .pdf
+                    </button>
+                    <button class="btn btn-outline btn-sm" id="download-docx">
+                        <i class="fas fa-file-word"></i> .docx
+                    </button>
+                    <button class="btn btn-outline btn-sm" id="download-img">
+                        <i class="fas fa-image"></i> .img
+                    </button>
+                </div>
+                <div style="margin-left: auto" class="flex gap-2">
+                    <button class="btn btn-outline btn-sm" id="copy-all" title="Copy to clipboard">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button class="btn btn-outline btn-sm" style="color: #ef4444" id="clear-all" title="Clear all">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="capture-area" style="background: var(--card); padding: 10px">
+                <textarea id="notepad-area" placeholder="Start typing your notes here..."></textarea>
+            </div>
+
+            <div class="stat-bar">
+                <div>Words: <span id="word-count">0</span> | Chars: <span id="char-count">0</span></div>
+                <div id="save-status">Saved</div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/docx@8.1.0/build/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const notepad = document.getElementById('notepad-area');
+        const wordCount = document.getElementById('word-count');
+        const charCount = document.getElementById('char-count');
+        const saveStatus = document.getElementById('save-status');
+        
+        const btnTxt = document.getElementById('download-txt');
+        const btnPdf = document.getElementById('download-pdf');
+        const btnDocx = document.getElementById('download-docx');
+        const btnImg = document.getElementById('download-img');
+        
+        const copyBtn = document.getElementById('copy-all');
+        const clearBtn = document.getElementById('clear-all');
+
+        // Load saved content
+        notepad.value = localStorage.getItem('smart_notepad') || '';
+
+        function updateStats() {
+            const text = notepad.value.trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            const chars = text.length;
+            
+            wordCount.textContent = words;
+            charCount.textContent = chars;
+        }
+
+        notepad.addEventListener('input', () => {
+            localStorage.setItem('smart_notepad', notepad.value);
+            updateStats();
+            
+            saveStatus.textContent = 'Saving...';
+            clearTimeout(window.saveTimeout);
+            window.saveTimeout = setTimeout(() => {
+                saveStatus.textContent = 'Saved';
+            }, 1000);
+        });
+
+        // Save as TXT
+        btnTxt.addEventListener('click', () => {
+            const blob = new Blob([notepad.value], { type: 'text/plain' });
+            Utils.downloadBlob(blob, 'note.txt');
+            Utils.showToast('Note saved as .txt', 'success');
+        });
+
+        // Save as PDF
+        btnPdf.addEventListener('click', () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const lines = doc.splitTextToSize(notepad.value, 180);
+            doc.text(lines, 15, 20);
+            doc.save('note.pdf');
+            Utils.showToast('Note saved as .pdf', 'success');
+        });
+
+        // Save as DOCX
+        btnDocx.addEventListener('click', () => {
+            const doc = new docx.Document({
+                sections: [{
+                    children: notepad.value.split('\n').map(line => new docx.Paragraph({
+                        children: [new docx.TextRun(line)]
+                    }))
+                }]
+            });
+            docx.Packer.toBlob(doc).then(blob => {
+                saveAs(blob, "note.docx");
+                Utils.showToast('Note saved as .docx', 'success');
+            });
+        });
+
+        // Save as IMAGE
+        btnImg.addEventListener('click', () => {
+            const captureArea = document.getElementById('capture-area');
+            // Temporarily style for capture
+            notepad.style.height = 'auto';
+            notepad.style.overflow = 'visible';
+            
+            html2canvas(captureArea, {
+                backgroundColor: getComputedStyle(document.body).getPropertyValue('--card')
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'note.png';
+                link.href = canvas.toDataURL();
+                link.click();
+                
+                // Restore style
+                notepad.style.height = '';
+                notepad.style.overflow = '';
+                Utils.showToast('Note saved as .png', 'success');
+            });
+        });
+
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(notepad.value);
+            Utils.showToast('Copied to clipboard!', 'success');
+        });
+
+        clearBtn.addEventListener('click', () => {
+            if (confirm('Clear all notes?')) {
+                notepad.value = '';
+                localStorage.removeItem('smart_notepad');
+                updateStats();
+            }
+        });
+
+        updateStats();
+    </script>
+</body>
+</html>

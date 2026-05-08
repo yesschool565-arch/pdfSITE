@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog - SmartTools Hub Resources</title>
+    <meta name="description" content="Stay updated with the latest tips, tricks, and resources for document management and image optimization.">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+            
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="blog.html" class="active">Blog</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="section">
+            <h1 style="text-align: center; margin-bottom: 3rem">SmartTools Blog</h1>
+            
+            <div class="grid gap-8" style="grid-template-columns: repeat(auto-fill, minmax(350px, 1fr))">
+                <!-- Blog Post 1 -->
+                <article class="box" style="padding: 0; overflow: hidden; display: flex; flex-direction: column">
+                    <div style="height: 200px; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center">
+                        <i class="fas fa-file-pdf" style="font-size: 4rem; color: white"></i>
+                    </div>
+                    <div style="padding: 2rem; flex-grow: 1">
+                        <span style="color: var(--primary); font-weight: 600; font-size: 0.8rem; text-transform: uppercase">PDF Guide</span>
+                        <h2 style="margin: 0.5rem 0 1rem; font-size: 1.5rem">5 Ways to Compress PDF without Losing Quality</h2>
+                        <p style="opacity: 0.7; margin-bottom: 1.5rem">Discover how to reduce file size effectively while maintaining high visual fidelity for your important documents.</p>
+                        <a href="#" class="btn btn-primary" style="width: 100%">Read More</a>
+                    </div>
+                </article>
+
+                <!-- Blog Post 2 -->
+                <article class="box" style="padding: 0; overflow: hidden; display: flex; flex-direction: column">
+                    <div style="height: 200px; background: linear-gradient(135deg, var(--accent), #ef4444); display: flex; align-items: center; justify-content: center">
+                        <i class="fas fa-image" style="font-size: 4rem; color: white"></i>
+                    </div>
+                    <div style="padding: 2rem; flex-grow: 1">
+                        <span style="color: var(--accent); font-weight: 600; font-size: 0.8rem; text-transform: uppercase">Images</span>
+                        <h2 style="margin: 0.5rem 0 1rem; font-size: 1.5rem">PNG vs WebP: Which Format Should You Use?</h2>
+                        <p style="opacity: 0.7; margin-bottom: 1.5rem">Comparing the pros and cons of different image formats for web performance and storage efficiency.</p>
+                        <a href="#" class="btn btn-primary" style="width: 100%">Read More</a>
+                    </div>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container" style="text-align: center; padding: 2rem">
+            <p>&copy; 2026 SmartTools Hub. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/main.js"></script>
+</body>
+</html>

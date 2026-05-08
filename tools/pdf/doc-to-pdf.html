@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word to PDF Converter - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Word to PDF</h1>
+            <p>Convert your Word documents (.docx) into professional PDF files instantly.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-file-pdf"></i>
+            <h2>Select Word Document</h2>
+            <p>Upload .docx files</p>
+            <input type="file" id="doc-input" accept=".docx" style="display: none">
+            <button class="btn btn-primary">Choose File</button>
+        </div>
+
+        <div id="workspace" style="display: none; max-width: 600px; margin: 2rem auto; text-align: center">
+            <div class="box" style="padding: 2rem">
+                <i class="fas fa-file-word" style="font-size: 3rem; color: #2b579a; margin-bottom: 1rem"></i>
+                <h3 id="file-name">document.docx</h3>
+                
+                <button id="convert-btn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 1rem">
+                    <i class="fas fa-exchange-alt"></i> Convert to PDF
+                </button>
+            </div>
+        </div>
+
+        <div id="hidden-renderer" style="position: fixed; left: -9999px; width: 210mm; background: white; color: black; padding: 20mm;"></div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="result-screen">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h2>PDF Created!</h2>
+            <p>Your Word document has been successfully converted.</p>
+            
+            <div class="flex gap-4" style="justify-content: center; margin-top: 2rem">
+                <button id="download-final" class="btn btn-primary btn-lg">
+                    <i class="fas fa-download"></i> Download PDF
+                </button>
+                <button onclick="location.reload()" class="btn btn-outline">
+                    <i class="fas fa-redo"></i> Convert Another
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const docInput = document.getElementById('doc-input');
+        const workspace = document.getElementById('workspace');
+        const convertBtn = document.getElementById('convert-btn');
+        const renderer = document.getElementById('hidden-renderer');
+        const resultScreen = document.getElementById('result-screen');
+        const downloadFinal = document.getElementById('download-final');
+
+        let finalPdf = null;
+
+        docInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            document.getElementById('file-name').textContent = file.name;
+            workspace.style.display = 'block';
+            document.getElementById('upload-zone').style.display = 'none';
+        });
+
+        convertBtn.addEventListener('click', async () => {
+            const file = docInput.files[0];
+            if (!file) return;
+
+            convertBtn.disabled = true;
+            convertBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Converting...';
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
+                renderer.innerHTML = result.value;
+
+                const { jsPDF } = window.jspdf;
+                const canvas = await html2canvas(renderer, { scale: 2 });
+                const imgData = canvas.toDataURL('image/png');
+                
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                finalPdf = pdf;
+
+                resultScreen.style.display = 'block';
+                Utils.showToast('Converted to PDF!', 'success');
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Error converting Word document', 'error');
+            } finally {
+                convertBtn.disabled = false;
+                convertBtn.innerHTML = '<i class="fas fa-exchange-alt"></i> Convert to PDF';
+            }
+        });
+
+        downloadFinal.addEventListener('click', () => {
+            if (finalPdf) finalPdf.save('smarttools-doc.pdf');
+        });
+    </script>
+</body>
+</html>

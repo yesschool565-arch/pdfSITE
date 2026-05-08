@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Page Numbers to PDF - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Add Page Numbers</h1>
+            <p>Number your PDF pages automatically in seconds.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-list-ol"></i>
+            <h2>Select PDF File</h2>
+            <p>Customize position and style</p>
+            <input type="file" id="pdf-input" accept="application/pdf" style="display: none">
+            <button class="btn btn-primary">Choose PDF</button>
+        </div>
+
+        <div id="workspace" style="display: none; max-width: 600px; margin: 2rem auto">
+            <div class="box" style="padding: 2rem">
+                <h3 id="file-name">filename.pdf</h3>
+                <hr style="margin: 1.5rem 0; opacity: 0.1">
+                
+                <div class="input-group">
+                    <label>Position</label>
+                    <select id="position" class="form-control">
+                        <option value="bottom-right">Bottom Right</option>
+                        <option value="bottom-center">Bottom Center</option>
+                        <option value="bottom-left">Bottom Left</option>
+                        <option value="top-right">Top Right</option>
+                        <option value="top-center">Top Center</option>
+                        <option value="top-left">Top Left</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Start Numbering From Page</label>
+                    <input type="number" id="start-page" class="form-control" value="1" min="1">
+                </div>
+
+                <button id="process-btn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 2rem">
+                    <i class="fas fa-magic"></i> Add Page Numbers
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="result-screen">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h2>Success!</h2>
+            <p>Page numbers have been added to your document.</p>
+            <div class="flex gap-4" style="justify-content: center; margin-top: 2rem">
+                <button id="download-final" class="btn btn-primary btn-lg">Download PDF</button>
+                <button onclick="location.reload()" class="btn btn-outline">Add More</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const pdfInput = document.getElementById('pdf-input');
+        const workspace = document.getElementById('workspace');
+        const processBtn = document.getElementById('process-btn');
+        const resultScreen = document.getElementById('result-screen');
+        const downloadFinal = document.getElementById('download-final');
+
+        let originalBuffer = null;
+        let processedBlob = null;
+
+        pdfInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            originalBuffer = await file.arrayBuffer();
+            document.getElementById('file-name').textContent = file.name;
+            workspace.style.display = 'block';
+            document.getElementById('upload-zone').style.display = 'none';
+        });
+
+        processBtn.addEventListener('click', async () => {
+            if (!originalBuffer) return;
+
+            processBtn.disabled = true;
+            processBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            try {
+                const { PDFDocument, StandardFonts, rgb } = PDFLib;
+                const pdfDoc = await PDFDocument.load(originalBuffer);
+                const pages = pdfDoc.getPages();
+                const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+                const pos = document.getElementById('position').value;
+                const startAt = parseInt(document.getElementById('start-page').value) || 1;
+
+                pages.forEach((page, index) => {
+                    if (index + 1 < startAt) return;
+
+                    const { width, height } = page.getSize();
+                    const text = `${index + 1}`;
+                    const textSize = 10;
+                    const textWidth = font.widthOfTextAtSize(text, textSize);
+                    
+                    let x, y;
+                    if (pos.includes('bottom')) y = 20;
+                    else y = height - 30;
+
+                    if (pos.includes('left')) x = 30;
+                    else if (pos.includes('right')) x = width - textWidth - 30;
+                    else x = (width - textWidth) / 2;
+
+                    page.drawText(text, { x, y, size: textSize, font, color: rgb(0.5, 0.5, 0.5) });
+                });
+
+                const pdfBytes = await pdfDoc.save();
+                processedBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+                
+                workspace.style.display = 'none';
+                resultScreen.style.display = 'block';
+                Utils.showToast('Page numbers added!', 'success');
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Error processing PDF', 'error');
+            } finally {
+                processBtn.disabled = false;
+                processBtn.innerHTML = '<i class="fas fa-magic"></i> Add Page Numbers';
+            }
+        });
+
+        downloadFinal.addEventListener('click', () => {
+            if (processedBlob) Utils.downloadBlob(processedBlob, 'numbered_document.pdf');
+        });
+    </script>
+</body>
+</html>

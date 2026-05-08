@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frequently Asked Questions - SmartTools Hub</title>
+    <meta name="description" content="Find answers to common questions about SmartTools Hub, privacy, and how our browser-based tools work.">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+            
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="all-tools.html">All Tools</a>
+                <a href="about.html">About</a>
+                <a href="faq.html" class="active">FAQ</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="section" style="max-width: 800px; margin: 0 auto">
+            <h1 style="text-align: center; margin-bottom: 3rem">Frequently Asked Questions</h1>
+            
+            <div class="box" style="padding: 2rem; margin-bottom: 1.5rem">
+                <h3>Is SmartTools Hub really free?</h3>
+                <p>Yes! Every tool on our platform is 100% free to use with no hidden costs or limits.</p>
+            </div>
+
+            <div class="box" style="padding: 2rem; margin-bottom: 1.5rem">
+                <h3>Are my files safe?</h3>
+                <p>Absolutely. Unlike other online tools, we do NOT upload your files to any server. All processing happens locally in your browser's memory. Once you close the tab, everything is gone.</p>
+            </div>
+
+            <div class="box" style="padding: 2rem; margin-bottom: 1.5rem">
+                <h3>Do I need to create an account?</h3>
+                <p>No registration is required. You can start using our tools immediately.</p>
+            </div>
+
+            <div class="box" style="padding: 2rem; margin-bottom: 1.5rem">
+                <h3>What happens if I have a large file?</h3>
+                <p>Since the processing happens in your browser, the speed and file size limit depend on your device's RAM. Most modern browsers can handle files up to several hundred megabytes without issue.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- FAQ Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [{
+        "@type": "Question",
+        "name": "Is SmartTools Hub really free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! Every tool on our platform is 100% free to use with no hidden costs or limits."
+        }
+      }, {
+        "@type": "Question",
+        "name": "Are my files safe?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Absolutely. All processing happens locally in your browser's memory. We never upload your files to a server."
+        }
+      }]
+    }
+    </script>
+
+    <footer>
+        <div class="container" style="text-align: center; padding: 2rem">
+            <p>&copy; 2026 SmartTools Hub. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/main.js"></script>
+</body>
+</html>

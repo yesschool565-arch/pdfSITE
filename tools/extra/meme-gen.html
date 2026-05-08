@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Meme Generator - Fast & Free - SmartTools Hub</title>
+    <meta name="description" content="Create hilarious memes in seconds with our free online meme maker. Upload images and add custom text instantly.">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    <style>
+        #meme-canvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-lg);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Meme Generator</h1>
+            <p>Upload a template and add your own text to create viral memes.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-laugh"></i>
+            <h2>Select Image</h2>
+            <p>Upload your meme template</p>
+            <input type="file" id="image-input" accept="image/*" style="display: none">
+            <button class="btn btn-primary">Choose Image</button>
+        </div>
+
+        <div id="workspace" style="display: none; max-width: 800px; margin: 2rem auto" class="grid gap-8">
+            <div style="text-align: center">
+                <canvas id="meme-canvas"></canvas>
+            </div>
+
+            <div class="box" style="padding: 1.5rem">
+                <div class="input-group">
+                    <label>Top Text</label>
+                    <input type="text" id="top-text" class="form-control" placeholder="WHEN YOU FORGET TO SAVE">
+                </div>
+                <div class="input-group">
+                    <label>Bottom Text</label>
+                    <input type="text" id="bottom-text" class="form-control" placeholder="BUT THE BROWSER RECOVERS IT">
+                </div>
+                <div class="grid gap-4" style="grid-template-columns: 1fr 1fr">
+                    <div class="input-group">
+                        <label>Font Size</label>
+                        <input type="number" id="font-size" class="form-control" value="40">
+                    </div>
+                    <div class="input-group">
+                        <label>Text Color</label>
+                        <input type="color" id="text-color" value="#ffffff" class="form-control" style="height: 45px">
+                    </div>
+                </div>
+
+                <button id="download-btn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 1.5rem">
+                    <i class="fas fa-download"></i> Download Meme
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const imageInput = document.getElementById('image-input');
+        const workspace = document.getElementById('workspace');
+        const canvas = document.getElementById('meme-canvas');
+        const ctx = canvas.getContext('2d');
+        const topText = document.getElementById('top-text');
+        const bottomText = document.getElementById('bottom-text');
+        const fontSizeInput = document.getElementById('font-size');
+        const textColor = document.getElementById('text-color');
+        const downloadBtn = document.getElementById('download-btn');
+
+        let originalImage = null;
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImage = img;
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    workspace.style.display = 'grid';
+                    document.getElementById('upload-zone').style.display = 'none';
+                    drawMeme();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function drawMeme() {
+            if (!originalImage) return;
+
+            ctx.drawImage(originalImage, 0, 0);
+
+            const fontSize = parseInt(fontSizeInput.value);
+            ctx.font = `bold ${fontSize}px Impact, sans-serif`;
+            ctx.fillStyle = textColor.value;
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = fontSize / 15;
+            ctx.textAlign = 'center';
+
+            // Draw Top Text
+            ctx.textBaseline = 'top';
+            ctx.fillText(topText.value.toUpperCase(), canvas.width / 2, 20);
+            ctx.strokeText(topText.value.toUpperCase(), canvas.width / 2, 20);
+
+            // Draw Bottom Text
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(bottomText.value.toUpperCase(), canvas.width / 2, canvas.height - 20);
+            ctx.strokeText(bottomText.value.toUpperCase(), canvas.width / 2, canvas.height - 20);
+        }
+
+        [topText, bottomText, fontSizeInput, textColor].forEach(input => {
+            input.addEventListener('input', drawMeme);
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const dataURL = canvas.toDataURL('image/jpeg');
+            const link = document.createElement('a');
+            link.download = 'meme.jpg';
+            link.href = dataURL;
+            link.click();
+            Utils.showToast('Meme ready!', 'success');
+        });
+    </script>
+</body>
+</html>

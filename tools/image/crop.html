@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop Image Online - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    
+    <style>
+        .crop-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            background: var(--card);
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .cropper-area {
+            max-height: 500px;
+            background: #000;
+        }
+
+        img {
+            display: block;
+            max-width: 100%;
+        }
+
+        .crop-controls {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            background: rgba(var(--bg), 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>Crop Image</h1>
+            <p>Cut and resize your images to perfection.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-crop-alt"></i>
+            <h2>Select Image</h2>
+            <p>Choose an image to crop</p>
+            <input type="file" id="image-input" accept="image/*" style="display: none">
+            <button class="btn btn-primary">Choose Image</button>
+        </div>
+
+        <div id="workspace" style="display: none">
+            <div class="crop-container">
+                <div class="cropper-area">
+                    <img id="image-to-crop" src="">
+                </div>
+                <div class="crop-controls">
+                    <button class="btn btn-outline" onclick="setRatio(1)">1:1</button>
+                    <button class="btn btn-outline" onclick="setRatio(1.777)">16:9</button>
+                    <button class="btn btn-outline" onclick="setRatio(0.666)">2:3</button>
+                    <button class="btn btn-outline" onclick="setRatio(NaN)">Free</button>
+                    <button class="btn btn-primary" id="crop-btn">
+                        <i class="fas fa-check"></i> Crop & Download
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        const imageInput = document.getElementById('image-input');
+        const workspace = document.getElementById('workspace');
+        const image = document.getElementById('image-to-crop');
+        const cropBtn = document.getElementById('crop-btn');
+        
+        let cropper = null;
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                image.src = event.target.result;
+                workspace.style.display = 'block';
+                document.getElementById('upload-zone').style.display = 'none';
+                
+                if (cropper) cropper.destroy();
+                cropper = new Cropper(image, {
+                    viewMode: 1,
+                    dragMode: 'move',
+                    autoCropArea: 1,
+                    restore: false,
+                    guides: true,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+
+        window.setRatio = (ratio) => {
+            if (cropper) cropper.setAspectRatio(ratio);
+        };
+
+        cropBtn.addEventListener('click', () => {
+            if (!cropper) return;
+            
+            const canvas = cropper.getCroppedCanvas();
+            canvas.toBlob((blob) => {
+                Utils.downloadBlob(blob, 'cropped-smarttools.png');
+                Utils.showToast('Image cropped and saved!', 'success');
+            }, 'image/png');
+        });
+    </script>
+</body>
+</html>

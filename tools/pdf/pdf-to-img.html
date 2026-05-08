@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to Image - Convert PDF to JPG/PNG - SmartTools Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    
+    <style>
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .page-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            overflow: hidden;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .page-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .page-card canvas {
+            width: 100%;
+            height: auto;
+            background: white;
+        }
+
+        .page-info {
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container navbar">
+            <a href="../../index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div style="text-align: center; padding: 4rem 0 2rem;">
+            <h1>PDF to Image</h1>
+            <p>Convert each PDF page into a high-quality JPG or PNG image.</p>
+        </div>
+
+        <div id="upload-zone" class="upload-zone">
+            <i class="fas fa-file-image"></i>
+            <h2>Select PDF File</h2>
+            <p>Convert pages to images instantly</p>
+            <input type="file" id="pdf-input" accept="application/pdf" style="display: none">
+            <button class="btn btn-primary">Choose PDF</button>
+        </div>
+
+        <div id="workspace" style="display: none">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem">
+                <div>
+                    <h3 id="file-name">filename.pdf</h3>
+                    <p id="page-count" style="opacity: 0.6">Total Pages: 0</p>
+                </div>
+                <div class="flex gap-4">
+                    <select id="img-format" class="form-control" style="width: auto">
+                        <option value="image/png">PNG</option>
+                        <option value="image/jpeg">JPG</option>
+                    </select>
+                    <button id="convert-btn" class="btn btn-primary">
+                        <i class="fas fa-magic"></i> Convert All Pages
+                    </button>
+                </div>
+            </div>
+
+            <div class="preview-grid" id="preview-grid">
+                <!-- Pages will appear here as canvases -->
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="result-screen">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h2>Conversion Ready!</h2>
+            <p>All pages have been converted to images.</p>
+            
+            <div class="flex gap-4" style="justify-content: center; margin-top: 2rem">
+                <button id="download-zip" class="btn btn-primary btn-lg">
+                    <i class="fas fa-file-archive"></i> Download All (ZIP)
+                </button>
+                <button onclick="location.reload()" class="btn btn-outline">
+                    <i class="fas fa-redo"></i> Convert Another
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div id="loading-overlay" class="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; flex-direction: column; justify-content: center; align-items: center; color: white;">
+        <div class="spinner" style="width: 50px; height: 50px"></div>
+        <p style="margin-top: 1rem" id="loading-text">Processing pages...</p>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/main.js"></script>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        const pdfInput = document.getElementById('pdf-input');
+        const workspace = document.getElementById('workspace');
+        const previewGrid = document.getElementById('preview-grid');
+        const convertBtn = document.getElementById('convert-btn');
+        const loading = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
+        const resultScreen = document.getElementById('result-screen');
+        
+        let pdfDoc = null;
+        let images = [];
+
+        pdfInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            loading.style.display = 'flex';
+            loadingText.textContent = 'Loading PDF...';
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                
+                document.getElementById('file-name').textContent = file.name;
+                document.getElementById('page-count').textContent = `Total Pages: ${pdfDoc.numPages}`;
+                
+                workspace.style.display = 'block';
+                document.getElementById('upload-zone').style.display = 'none';
+                
+                renderPreviews();
+            } catch (err) {
+                console.error(err);
+                Utils.showToast('Error loading PDF', 'error');
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        async function renderPreviews() {
+            previewGrid.innerHTML = '';
+            for (let i = 1; i <= Math.min(pdfDoc.numPages, 10); i++) {
+                const page = await pdfDoc.getPage(i);
+                const viewport = page.getViewport({ scale: 0.5 });
+                
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+                const card = document.createElement('div');
+                card.className = 'page-card animate-fade-in';
+                card.innerHTML = `
+                    <div class="canvas-container"></div>
+                    <div class="page-info">
+                        <span>Page ${i}</span>
+                        <button class="btn btn-icon" onclick="downloadSinglePage(${i})"><i class="fas fa-download"></i></button>
+                    </div>
+                `;
+                card.querySelector('.canvas-container').appendChild(canvas);
+                previewGrid.appendChild(card);
+            }
+            if (pdfDoc.numPages > 10) {
+                Utils.showToast(`Previewing first 10 pages of ${pdfDoc.numPages}`, 'info');
+            }
+        }
+
+        convertBtn.addEventListener('click', async () => {
+            loading.style.display = 'flex';
+            const zip = new JSZip();
+            const format = document.getElementById('img-format').value;
+            const ext = format === 'image/jpeg' ? 'jpg' : 'png';
+
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+                loadingText.textContent = `Converting Page ${i} of ${pdfDoc.numPages}...`;
+                const page = await pdfDoc.getPage(i);
+                const viewport = page.getViewport({ scale: 2.0 }); // High quality
+                
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+                
+                const dataUrl = canvas.toDataURL(format, 0.9);
+                const base64Data = dataUrl.split(',')[1];
+                zip.file(`page-${i}.${ext}`, base64Data, { base64: true });
+            }
+
+            const content = await zip.generateAsync({ type: 'blob' });
+            window.zipBlob = content;
+            
+            workspace.style.display = 'none';
+            resultScreen.style.display = 'block';
+            loading.style.display = 'none';
+            Utils.showToast('All pages converted!', 'success');
+        });
+
+        document.getElementById('download-zip').addEventListener('click', () => {
+            if (window.zipBlob) Utils.downloadBlob(window.zipBlob, 'smarttools-pdf-images.zip');
+        });
+
+        window.downloadSinglePage = async (pageIndex) => {
+            const page = await pdfDoc.getPage(pageIndex);
+            const viewport = page.getViewport({ scale: 2.0 });
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            await page.render({ canvasContext: context, viewport: viewport }).promise;
+            
+            const format = document.getElementById('img-format').value;
+            const ext = format === 'image/jpeg' ? 'jpg' : 'png';
+            canvas.toBlob((blob) => {
+                Utils.downloadBlob(blob, `page-${pageIndex}.${ext}`);
+            }, format, 0.9);
+        };
+    </script>
+</body>
+</html>

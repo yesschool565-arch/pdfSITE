@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartTools Hub - Free Browser-Based PDF & Image Tools</title>
+    <meta name="description" content="Free, fast, and 100% private online utility tools. Convert, merge, split, and compress PDFs and images entirely in your browser. No uploads required.">
+    
+    <!-- Technical SEO -->
+    <link rel="canonical" href="https://smarttoolshub.com/">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="SmartTools Hub - All-in-One Utility Platform">
+    <meta property="og:description" content="Free browser-based tools for PDF, Images, and more. Privacy focused.">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="container navbar">
+            <a href="index.html" class="logo">
+                <i class="fas fa-bolt"></i> SmartTools
+            </a>
+            
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <div class="nav-dropdown">
+                    <a href="all-tools.html" class="dropdown-trigger">PDF Tools <i class="fas fa-chevron-down" style="font-size: 0.7rem"></i></a>
+                    <div class="dropdown-content">
+                        <a href="tools/pdf/merge.html">Merge PDF</a>
+                        <a href="tools/pdf/split.html">Split PDF</a>
+                        <a href="tools/pdf/compress.html">Compress PDF</a>
+                        <a href="tools/pdf/rearrange.html">Organize PDF</a>
+                        <hr style="opacity: 0.1; margin: 0.5rem 0">
+                        <a href="tools/pdf/doc-to-pdf.html">Word to PDF</a>
+                        <a href="tools/pdf/pdf-to-doc.html">PDF to Word</a>
+                        <a href="tools/pdf/pdf-to-img.html">PDF to Image</a>
+                    </div>
+                </div>
+                <div class="nav-dropdown">
+                    <a href="all-tools.html" class="dropdown-trigger">Image Tools <i class="fas fa-chevron-down" style="font-size: 0.7rem"></i></a>
+                    <div class="dropdown-content">
+                        <a href="tools/image/resize.html">Resize Image</a>
+                        <a href="tools/image/convert.html">Convert Image</a>
+                        <a href="tools/image/crop.html">Crop Image</a>
+                        <a href="tools/extra/palette.html">Palette Gen</a>
+                    </div>
+                </div>
+                <a href="faq.html">FAQ</a>
+                <a href="about.html">About</a>
+            </nav>
+            
+            <div class="nav-actions flex items-center gap-4">
+                <button id="theme-toggle" class="btn-icon" title="Toggle Theme">
+                    <i class="fas fa-sun"></i>
+                </button>
+                <button class="mobile-menu-toggle btn-icon">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero section">
+        <div class="container">
+            <h1 class="animate-fade-in">Smarter Tools for <span style="color: var(--primary)">Everyone.</span></h1>
+            <p class="animate-fade-in">Free, fast, and secure online tools. No installation, no registration, and fully privacy-focused (runs entirely in your browser).</p>
+            
+            <div class="search-container animate-fade-in">
+                <i class="fas fa-search"></i>
+                <input type="text" id="tool-search" placeholder="Search for tools (e.g., PDF to JPG, QR Generator...)">
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <section class="section" id="tools">
+        <div class="container">
+            <div class="category-tabs" style="margin-bottom: 4rem">
+                <button class="tab-btn active" data-filter="all"><i class="fas fa-border-all"></i> All Tools</button>
+                <button class="tab-btn" data-filter="pdf"><i class="fas fa-file-pdf"></i> PDF Tools</button>
+                <button class="tab-btn" data-filter="image"><i class="fas fa-image"></i> Image Tools</button>
+                <button class="tab-btn" data-filter="security"><i class="fas fa-shield-alt"></i> Security</button>
+                <button class="tab-btn" data-filter="utility"><i class="fas fa-tools"></i> Utility</button>
+            </div>
+
+            <!-- PDF ESSENTIALS -->
+            <div class="tool-group-section" data-group="pdf">
+                <div style="margin-bottom: 2rem">
+                    <h2 style="font-size: 1.8rem; display: flex; align-items: center; gap: 0.75rem">
+                        <i class="fas fa-file-pdf" style="color: #ef4444"></i> PDF Essentials
+                    </h2>
+                </div>
+                <div class="tool-grid">
+                    <a href="tools/pdf/merge.html" class="tool-card" data-category="pdf">
+                        <div class="tool-icon"><i class="fas fa-object-group"></i></div>
+                        <h3>Merge PDF</h3>
+                        <p>Combine multiple PDFs into one.</p>
+                    </a>
+                    <a href="tools/pdf/split.html" class="tool-card" data-category="pdf">
+                        <div class="tool-icon"><i class="fas fa-cut"></i></div>
+                        <h3>Split PDF</h3>
+                        <p>Extract pages from PDF files.</p>
+                    </a>
+                    <a href="tools/pdf/compress.html" class="tool-card" data-category="pdf">
+                        <div class="tool-icon"><i class="fas fa-file-compress"></i></div>
+                        <h3>Compress PDF</h3>
+                        <p>Reduce file size in browser.</p>
+                    </a>
+                    <a href="tools/pdf/rearrange.html" class="tool-card" data-category="pdf">
+                        <div class="tool-icon"><i class="fas fa-sort-amount-down"></i></div>
+                        <h3>Organize PDF</h3>
+                        <p>Reorder or delete pages visually.</p>
+                    </a>
+                </div>
+            </div>
+
+            <!-- PDF CONVERSION -->
+            <div class="tool-group-section" data-group="pdf" style="margin-top: 5rem">
+                <div style="margin-bottom: 2rem">
+                    <h2 style="font-size: 1.8rem; display: flex; align-items: center; gap: 0.75rem">
+                        <i class="fas fa-exchange-alt" style="color: var(--primary)"></i> PDF Conversion
+                    </h2>
+                </div>
+                <div class="tool-grid">
+                    <a href="tools/pdf/jpg-to-pdf.html" class="tool-card" data-category="pdf">
+                        <div class="tool-icon"><i class="fas fa-file-image"></i></div>
+                        <h3>Image to PDF</h3>
+                        <p>Convert JPG, PNG to PDF.</p>
+                    </a>
+                    <a href="tools/pdf/doc-to-pdf.html" class="tool-card" data-category="pdf">
+                        <div class="tool-icon"><i class="fas fa-file-word"></i></div>
+                        <h3>Word to PDF</h3>
+                        <p>Convert DOCX to PDF.</p>
+                    </a>
+                    <a href="tools/pdf/pdf-to-img.html" class="tool-card" data-category="pdf">
+                        <div class="tool-icon"><i class="fas fa-images"></i></div>
+                        <h3>PDF to Image</h3>
+                        <p>Export pages as JPG/PNG.</p>
+                    </a>
+                    <a href="tools/pdf/pdf-to-doc.html" class="tool-card" data-category="pdf">
+                        <div class="tool-icon"><i class="fas fa-file-word"></i></div>
+                        <h3>PDF to Word</h3>
+                        <p>Extract text to editable DOCX.</p>
+                    </a>
+                </div>
+            </div>
+
+            <!-- IMAGE MAGIC -->
+            <div class="tool-group-section" data-group="image" style="margin-top: 5rem">
+                <div style="margin-bottom: 2rem">
+                    <h2 style="font-size: 1.8rem; display: flex; align-items: center; gap: 0.75rem">
+                        <i class="fas fa-magic" style="color: #10b981"></i> Image Magic
+                    </h2>
+                </div>
+                <div class="tool-grid">
+                    <a href="tools/image/resize.html" class="tool-card" data-category="image">
+                        <div class="tool-icon"><i class="fas fa-expand-arrows-alt"></i></div>
+                        <h3>Resize Image</h3>
+                        <p>Change dimensions or KB size.</p>
+                    </a>
+                    <a href="tools/image/convert.html" class="tool-card" data-category="image">
+                        <div class="tool-icon"><i class="fas fa-sync"></i></div>
+                        <h3>Universal Converter</h3>
+                        <p>Convert between JPG, PNG, WEBP.</p>
+                    </a>
+                    <a href="tools/image/crop.html" class="tool-card" data-category="image">
+                        <div class="tool-icon"><i class="fas fa-crop-alt"></i></div>
+                        <h3>Crop Image</h3>
+                        <p>Trim and frame your photos.</p>
+                    </a>
+                    <a href="tools/extra/ocr.html" class="tool-card" data-category="utility">
+                        <div class="tool-icon"><i class="fas fa-font"></i></div>
+                        <h3>OCR Text</h3>
+                        <p>Extract text from images.</p>
+                    </a>
+                </div>
+            </div>
+
+            <!-- SECURITY & PRIVACY -->
+            <div class="tool-group-section" data-group="security" style="margin-top: 5rem">
+                <div style="margin-bottom: 2rem">
+                    <h2 style="font-size: 1.8rem; display: flex; align-items: center; gap: 0.75rem">
+                        <i class="fas fa-shield-alt" style="color: #f59e0b"></i> Security & Privacy
+                    </h2>
+                </div>
+                <div class="tool-grid">
+                    <a href="tools/pdf/protect.html" class="tool-card" data-category="security">
+                        <div class="tool-icon"><i class="fas fa-lock"></i></div>
+                        <h3>Protect PDF</h3>
+                        <p>Add password encryption.</p>
+                    </a>
+                    <a href="tools/pdf/sign.html" class="tool-card" data-category="pdf">
+                        <div class="tool-icon"><i class="fas fa-pen-nib"></i></div>
+                        <h3>Sign PDF</h3>
+                        <p>Draw and place digital signatures.</p>
+                    </a>
+                    <a href="tools/extra/password.html" class="tool-card" data-category="security">
+                        <div class="tool-icon"><i class="fas fa-key"></i></div>
+                        <h3>Password Gen</h3>
+                        <p>Create secure passwords.</p>
+                    </a>
+                </div>
+            </div>
+
+            <!-- WHY CHOOSE US -->
+            <section class="section" style="margin-top: 8rem; border-top: 1px solid var(--border)">
+                <div style="text-align: center; margin-bottom: 4rem">
+                    <h2 style="font-size: 2.5rem">Why Choose <span style="color: var(--primary)">SmartTools Hub?</span></h2>
+                    <p style="opacity: 0.7">The fastest, most secure way to handle your digital tasks.</p>
+                </div>
+                <div class="grid gap-8" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr))">
+                    <div class="box" style="padding: 2rem">
+                        <i class="fas fa-user-shield" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 1.5rem"></i>
+                        <h3>100% Private</h3>
+                        <p>Your files never leave your computer. Processing happens entirely in your browser memory.</p>
+                    </div>
+                    <div class="box" style="padding: 2rem">
+                        <i class="fas fa-tachometer-alt" style="font-size: 2.5rem; color: var(--secondary); margin-bottom: 1.5rem"></i>
+                        <h3>Ultra Fast</h3>
+                        <p>No waiting for uploads or server processing. Get results in milliseconds, not minutes.</p>
+                    </div>
+                    <div class="box" style="padding: 2rem">
+                        <i class="fas fa-check-double" style="font-size: 2.5rem; color: var(--accent); margin-bottom: 1.5rem"></i>
+                        <h3>High Accuracy</h3>
+                        <p>Advanced algorithms ensure your PDFs and Images maintain original quality and layout.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="index.html" class="logo">
+                        <i class="fas fa-bolt"></i> SmartTools
+                    </a>
+                    <p>Browser-based utility tools. 100% Free & Secure.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="all-tools.html">All Tools</a></li>
+                        <li><a href="blog.html">Blog</a></li>
+                        <li><a href="faq.html">FAQ</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                        <li><a href="terms.html">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; 2026 SmartTools Hub. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <div id="toast-container"></div>
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/main.js"></script>
+</body>
+</html>
